@@ -4,12 +4,9 @@ export USER=slack
 export HOME=/var/lib/slack-master
 export CVSROOT=":local:${HOME}/cvsroot"
 SLACK_SOURCE="${HOME}/source"
-if [ "x$1" = "x-r" ] ; then
-    rm -rf "${SLACK_SOURCE}"
-else
-    mkdir -p "${SLACK_SOURCE}"
-    chown "${USER}": "${SLACK_SOURCE}"
-    cd "${SLACK_SOURCE}"
-    su -s /bin/sh "${USER}" -c "cvs -q co etc"
-    su -s /bin/sh "${USER}" -c "cvs -q co roles"
-fi
+
+mkdir -p "${SLACK_SOURCE}"
+chown "${USER}": "${SLACK_SOURCE}"
+cd "${SLACK_SOURCE}"
+su -s /bin/sh "${USER}" -c "cvs -q co etc"
+su -s /bin/sh "${USER}" -c "cvs -q co roles"
