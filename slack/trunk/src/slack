@@ -191,9 +191,9 @@ for my $role (@roles) {
   # sync
   run_command(LIBEXEC_DIR.'/slack-sync',
     @backend_flags, $role);
-  # fixperms
+  # fixfiles
   run_command(LIBEXEC_DIR.'/slack-runscript',
-    @backend_flags, 'fixperms', $role);
+    @backend_flags, 'fixfiles', $role);
   # preinstall
   run_command(LIBEXEC_DIR.'/slack-runscript',
     @backend_flags, 'preinstall', $role);

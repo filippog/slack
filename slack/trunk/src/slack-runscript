@@ -139,7 +139,7 @@ for my $full_role (@ARGV) {
     next;
   }
   my $dir;
-  if ($action eq 'fixperms') {
+  if ($action eq 'fixfiles') {
     $dir = "$opt{cache}/roles/$base_role/files";
   } else {
     $dir = "$opt{cache}/roles/$base_role/scripts";
