@@ -1,0 +1,263 @@
+#!/usr/bin/perl -w
+# $Id$
+# vim:sw=2
+# vim600:fdm=marker
+
+# This script is in charge of copying files from the (possibly remote)
+# master directory to a local cache, using rsync
+
+require 5.006;
+use warnings FATAL => qw(all);
+use strict;
+
+use File::Path;
+use File::Find;
+
+use constant DEFAULT_CONFIG_FILE => '/etc/slack.conf';
+
+my @rsync = ('rsync',
+              '--recursive',
+              '--links',
+              '--times',
+              '--sparse',
+              '--delete',
+              );
+
+(my $PROG = $0) =~ s#.*/##;
+
+sub sync_role (@);
+sub apply_default_perms_to_role ($);
+
+########################################
+# Environment
+# Helpful prefix to die messages
+$SIG{__DIE__} = sub { die "FATAL[$PROG]: @_"; };
+# Set a reasonable umask
+umask 077;
+# Get out of wherever (possibly NFS-mounted) we were
+chdir("/")
+  or die "Could not chdir /: $!";
+# Autoflush on STDERR
+select((select(STDERR), $|=1)[0]);
+
+########################################
+# Config and option parsing {{{
+my $usage = <<EOF;
+Usage: $PROG [options] <role> [<role>...]
+
+Options:
+  -h, -?, --help
+      Print this help message and exit.
+
+  -v, --verbose
+      Be verbose
+
+  -C, --config  FILE
+      Use this config file instead of /etc/slack.conf
+
+  -s, --source  DIR
+      Source for slack files
+
+  -c, --cache  DIR
+      Local cache directory for slack files
+
+  -r, --root  DIR
+      Root destination for slack files
+
+  -n, --dry-run
+      Don't write any files to disk -- just report what would have been done.
+
+  -b, --backups  DIR
+      Make backups of existing files and put them in this directory.
+EOF
+
+# Option defaults
+my %opt = (
+  config => DEFAULT_CONFIG_FILE,
+  verbose => 0,
+);
+# A special option to shut off verbose
+$opt{quiet} = sub { $opt{verbose} = 0; };
+
+# Reads through the config file
+sub read_config () {
+  my $config = $opt{config};
+  open(CONFIG, "<", $config)
+    or die "Could not open config file '$config': $!";
+  while(<CONFIG>) {
+    chomp;
+    s/#.*//; # delete comments
+    s/\s+$//; # delete trailing spaces
+    next if m/^$/; # skip empty lines
+    if (m/^[A-Z_]+=\S+/) {
+      my ($key, $value) = split(/=/, $_, 2);
+      $key =~ tr/A-Z_/a-z-/;
+      if (not defined $opt{$key}) {
+        ($opt{verbose} > 2) and print STDERR "$PROG: Setting '$key' to '$value'\n";
+        $opt{$key} = $value;
+      }
+    } else {
+      warn "WARNING[$PROG]: Garbage line '$_' in '$config' line $.\n";
+    }
+  }
+  close(CONFIG)
+    or die "Could not close config file: $!";
+}
+
+# Collect options
+{
+    use Getopt::Long;
+    Getopt::Long::Configure ("bundling");
+    GetOptions(\%opt,
+      'verbose|v+',
+      'quiet',
+      'help|h|?',
+      'backups|b=s',
+      'config|C=s',
+      'dry-run|n',
+      'source|s=s',
+      'cache|c=s',
+      'root|r=s',
+      ) or die $usage;
+    if ($opt{help}) {
+        print $usage;
+        exit 0;
+    }
+    read_config;
+}
+
+# Arguments are required
+die "No roles given!\n\n$usage" unless @ARGV;
+die "No source defined!\n\n$usage" unless $opt{source};
+die "No cache defined!\n\n$usage" unless $opt{cache};
+
+# Prepare for backups
+if ($opt{backups}) {
+  # Make sure backup directory exists
+  unless (-d $opt{backups}) {
+    $opt{verbose} and print STDERR "$PROG: Creating backup directory '$opt{backups}'\n";
+    if (not $opt{'dry-run'}) {
+      eval { mkpath($opt{backups}); };
+      die "Could not mkpath backup dir '$opt{backups}': $@\n" if $@;
+    }
+  }
+  push @rsync, '--backup', "--backup-dir=$opt{backups}";
+}
+# Look at source type, and add options if necessary
+if ($opt{source} =~ m/^[a-zA-Z_@\.-]+::/) {
+  # This is tunnelled rsync, and so needs an extra option
+  push @rsync, '-e', 'ssh';
+}
+
+# Pass options along to rsync
+if ($opt{'dry-run'}) {
+  push @rsync, '--dry-run';
+}
+# Pass options along to rsync
+if ($opt{'verbose'}) {
+  push @rsync, '--verbose';
+}
+# }}}
+
+# copy over the new files
+for my $full_role (@ARGV) {
+  # Split the full role (e.g. google.foogle.woogle) into components
+  my @role_parts = split(/\./, $full_role);
+  # Reassemble parts one at a time onto @role and sync as we go,
+  # so we do "google", then "google.foogle", then "google.foogle.woogle"
+  my @role = ();
+  while (defined (my $part = shift @role_parts)) {
+    push @role, $part;
+    $opt{verbose} and print STDERR "$PROG: Calling sync_role for @role\n";
+    sync_role(@role);
+  }
+  apply_default_perms_to_role($role[0]);
+}
+
+sub sync_role (@) {
+  my @role = @_;
+  my @subdirs;
+  # For the base role, do both files and scripts.  For all subroles,
+  # just do the files
+  if (scalar @role == 1) {
+    @subdirs = qw(files scripts);
+  } else {
+    @subdirs = qw(files);
+  }
+  for my $subdir (@subdirs) {
+    # (a)     => a/files 
+    # (a,b,c) => a/files.b.c
+    my $src_path = $role[$[].'/'.join(".", $subdir, @role[($[+1)..$#role]);
+    my $dst_path = $role[$[].'/'.$subdir;
+
+    # final / is important for rsync
+    my $source = $opt{source} . "/roles/" . $src_path . "/";
+    my $destination = $opt{cache} . "/roles/" . $dst_path . "/";
+    if (not -d $destination) {
+        $opt{verbose} and print STDERR "$PROG: Creating '$destination'\n";
+        if (not $opt{'dry-run'}) {
+          eval { mkpath($destination); };
+          die "Could not mkpath cache dir '$destination': $@\n" if $@;
+        }
+    }
+    my @command = (@rsync, $source, $destination);
+    $opt{verbose} and print STDERR "$PROG: Syncing $src_path with '@command'\n";
+    unless (system(@command) == 0) {
+      if ($!) {
+          die "Syserr on system '@command': $!\n";
+      }
+      if ($? & 128) {
+          die "'@command' dumped core\n";
+      }
+      if (my $sig = $? & 127) {
+          die "'@command' caught sig $sig\n";
+      }
+      if (my $exit = $? >> 8) {
+          die "'@command' returned $exit\n";
+      }
+      die "Unknown error on '@command'\n";
+    }
+  }
+}
+
+# This just takes the base role, and chmods everything under it
+sub apply_default_perms_to_role ($) {
+  my ($role) = @_;
+  my $destination = $opt{cache} . "/roles/" . $role;
+  $opt{verbose} and print STDERR "$PROG: Setting default perms on $destination\n";
+  if ($> != 0) {
+    warn "WARNING[$PROG]: Not superuser; won't be able to chown files\n";
+  }
+  # Use File::Find to recurse the directory
+  find({
+      # The "wanted" subroutine is called for every directory entry
+      wanted => sub {
+        return if $opt{'dry-run'};
+        if (-l) {
+          # TODO maybe should lchown symlinks
+          warn "WARNING[$PROG]: Skipping symlink at $File::Find::name: $!\n";
+          return;
+        } elsif (-f _) { # results of last stat saved in the "_"
+          if (-x _) {
+            chmod 0555, $_
+              or die "Could not chmod 0555 $File::Find::name: $!";
+          } else {
+            chmod 0444, $_
+              or die "Could not chmod 0444 $File::Find::name: $!";
+          }
+        } elsif (-d _) {
+          chmod 0755, $_
+            or die "Could not chmod 0755 $File::Find::name: $!";
+        } else {
+          warn "WARNING[$PROG]: Unknown file type at $File::Find::name: $!\n";
+        }
+        return if $> != 0; # skip chowning if not superuser
+        chown 0, 0, $_
+          or die "Could not chown 0:0 $File::Find::name: $!";
+      },
+      # end of wanted function
+    },
+    # way down here, we have the directory to traverse with File::Find
+    $destination,
+  );
+}

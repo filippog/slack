@@ -1,0 +1,55 @@
+.\" $Header$
+.\" vim:tw=72:filetype=nroff
+.\"
+.\"       manpage for slack.conf
+.\"
+.TH slack.conf 5 2005-05-23 "File formats" 
+
+.SH NAME
+slack.conf \- configuration file for slack
+
+.SH DESCRIPTION
+The file
+.I /etc/slack.conf
+contains configuration information for
+.BR slack (8)
+and its backends.  It should contain one keyword-value pair per line,
+separated by an '=' sign.  Keywords must consist solely of capital
+letters and underscores.  Values may take any appropriate format, but
+must not begin with a space.  Comments start with '#', and all text from
+the '#' to the end of a line is ignored.  Trailing whitespace on lines
+is ignored.  Empty lines or lines consisting of only whitespace and
+comments are ignored.
+
+Valid keywords are:
+.TP
+\fBSOURCE\fP
+The master source for slack roles.
+.TP
+\fBROOT\fP
+The root filesystem into which to install slack roles.  Usually
+.RI ' / '.
+.TP
+\fBROLE_LIST\fP
+The location of the role list, which lists the roles to be installed
+by default on each host.
+.TP
+\fBCACHE\fP
+A local cache directory, used as an intermediate stage when installing
+files.
+
+.SH EXAMPLE
+
+A typical file might look like this:
+
+  # slack.conf configuration file
+  SOURCE=slack-master:/slack  # source is on a remote
+                              # host named "slack-master"
+  ROLE_LIST=slack-master:/roles.conf
+  ROOT=/
+  CACHE=/var/lib/slack/cache
+
+.SH FILES
+.I /etc/slack.conf
+.SH SEE ALSO
+.BR slack(8)

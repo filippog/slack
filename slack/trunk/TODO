@@ -1,0 +1,9 @@
+# $Id$
+* manpages for slack, slack-backends
+
+* Use backup functionality to store original versions of files,
+  so we can uninstall
+* Use backups to store intermediate versions of files for rollbacks
+* Make a helper that uses tripwire or AIDE to find files that
+  have been modified and upload them to repository, so people
+  can be *really* lazy.

@@ -1,0 +1,45 @@
+#!/usr/bin/perl -w
+# $Id$
+# vim:sw=2
+# vim600:fdm=marker
+
+# This script is in charge of copying files from the local cache to the root
+# of the local filesystem
+
+# This version of the script is just a wrapper to figure out the right
+# backend script to call, depending on the version of rsync.
+
+require 5.006;
+use warnings FATAL => qw(all);
+use strict;
+
+use File::Path;
+use File::Find;
+
+use constant DEFAULT_CONFIG_FILE => '/etc/slack.conf';
+
+my @rsync = ('rsync', '--version');
+
+(my $PROG = $0) =~ s#.*/##;
+
+my $rsync_version;
+
+# Helpful prefix to die messages
+$SIG{__DIE__} = sub { die "FATAL[$PROG]: @_"; };
+########################################
+# Figure out our rsync version
+open (RSYNC, "@rsync |")
+  or die "$PROG: Could not open '@rsync': $!\n";
+my $version_line = (<RSYNC>)[0];
+close (RSYNC)
+  or die "$PROG: Error when closing '@rsync': $!/$?\n";
+if ($version_line =~ m/^rsync\s+version\s+(\d+\.\d+)/) {
+  $rsync_version = $1;
+} else {
+  chomp $version_line;
+  die "Could not parse rsync version!  Got '$version_line'\n";
+}
+
+# Exec the right version of our program
+exec ("$0_rsync-$rsync_version", @ARGV);
+die "Could not exec '$0_rsync-$rsync_version @ARGV': $!\n";

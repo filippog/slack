@@ -1,0 +1,227 @@
+#!/usr/bin/perl -w
+# $Id$
+# vim:sw=2
+# vim600:fdm=marker
+
+# This script is in charge of copying files from the (possibly remote)
+# master directory to a local cache, using rsync
+
+require 5.006;
+use warnings FATAL => qw(all);
+use strict;
+
+use File::Path;
+use File::Find;
+
+use constant DEFAULT_CONFIG_FILE => '/etc/slack.conf';
+#use constant LIBEXEC_DIR => '/usr/lib/slack';
+use constant LIBEXEC_DIR => '/nfs/stor/src/alan/slack/package/src';
+
+(my $PROG = $0) =~ s#.*/##;
+
+my @backend_flags = ();
+my @roles;
+
+sub run_command (@);
+
+########################################
+# Environment
+# Helpful prefix to die messages
+$SIG{__DIE__} = sub { die "FATAL[$PROG]: @_"; };
+# Set a reasonable umask
+umask 077;
+# Get out of wherever (possibly NFS-mounted) we were
+chdir("/")
+  or die "Could not chdir /: $!";
+# Autoflush on STDERR
+select((select(STDERR), $|=1)[0]);
+
+########################################
+# Config and option parsing {{{
+my $usage = <<EOF;
+Usage: $PROG [options] [<role>...]
+
+Options:
+  -h, -?, --help
+      Print this help message and exit.
+
+  -v, --verbose
+      Be verbose
+
+  -C, --config  FILE
+      Use this config file instead of /etc/slack.conf
+
+  -s, --source  DIR
+      Source for slack files
+
+  -c, --cache  DIR
+      Local cache directory for slack files
+
+  -r, --root  DIR
+      Root destination for slack files
+
+  -n, --dry-run
+      Don't write any files to disk -- just report what would have been done.
+
+  -b, --backups  DIR
+      Make backups of existing files and put them in this directory.
+EOF
+
+# Options
+my %opt = (
+  verbose => 0,
+);
+# A special option to shut off verbose
+$opt{quiet} = sub { $opt{verbose} = 0; };
+# So we can distinguish stuff on the command line from config file stuff
+my %command_line_opt = ();
+
+# Reads through the config file
+sub read_config () {
+  my $config = $opt{config};
+  open(CONFIG, "<", $config)
+    or die "Could not open config file '$config': $!";
+  while(<CONFIG>) {
+    chomp;
+    s/#.*//; # delete comments
+    s/\s+$//; # delete trailing spaces
+    next if m/^$/; # skip empty lines
+    if (m/^[A-Z_]+=\S+/) {
+      my ($key, $value) = split(/=/, $_, 2);
+      $key =~ tr/A-Z_/a-z-/;
+      if (not defined $opt{$key}) {
+        ($opt{verbose} > 2) and print STDERR "$PROG: Setting '$key' to '$value'\n";
+        $opt{$key} = $value;
+      }
+    } else {
+      warn "WARNING[$PROG]: Garbage line '$_' in '$config' line $.\n";
+    }
+  }
+  close(CONFIG)
+    or die "Could not close config file: $!";
+}
+
+# Collect options
+{
+    use Getopt::Long;
+    Getopt::Long::Configure ("bundling");
+    GetOptions(\%opt,
+      'verbose|v+',
+      'quiet',
+      'help|h|?',
+      'backups|b=s',
+      'config|C=s',
+      'dry-run|n',
+      'source|s=s',
+      'cache|c=s',
+      'root|r=s',
+      ) or die $usage;
+    if ($opt{help}) {
+        print $usage;
+        exit 0;
+    }
+    # Remember command line options
+    %command_line_opt = %opt;
+    # Set a default config file
+    if (not defined $opt{config}) {
+      $opt{config} = DEFAULT_CONFIG_FILE;
+    }
+    read_config;
+}
+
+# Some conf variables are required
+die "No source defined!\n\n$usage" unless $opt{source};
+die "No root defined!\n\n$usage" unless $opt{root};
+die "No cache defined!\n\n$usage" unless $opt{cache};
+
+# Pass options along to backends
+if ($command_line_opt{'dry-run'}) {
+  push @backend_flags, '--dry-run';
+}
+if ($command_line_opt{'verbose'}) {
+  push @backend_flags, '--verbose';
+}
+for my $option (qw(backups config root cache source role-list)) {
+  if ($command_line_opt{$option}) {
+    push @backend_flags, "--$option=$command_line_opt{$option}";
+  }
+}
+# }}}
+
+# Get a list of roles to install from slack-getroles {{{
+if (not @ARGV) {
+  my @command = (LIBEXEC_DIR.'/slack-getroles', @backend_flags);
+  $opt{verbose} and print STDERR "$PROG: Calling '@command' to get a list of roles for this host.\n";
+  my ($roles_pid, $roles_fh);
+  if ($roles_pid = open($roles_fh, "-|")) {
+    # Parent
+  } elsif (defined $roles_pid) {
+    # Child
+    exec(@command);
+    die "Could not exec '@command': $!\n";
+  } else {
+    die "Could not fork to run '@command': $!\n";
+  }
+  @roles = split(/\s+/, join(" ", <$roles_fh>));
+  unless (close($roles_fh)) {
+    if ($!) {
+        die "Syserr on system '@command': $!\n";
+    }
+    if ($? & 128) {
+        die "'@command' dumped core\n";
+    }
+    if (my $sig = $? & 127) {
+        die "'@command' caught sig $sig\n";
+    }
+    if (my $exit = $? >> 8) {
+        die "'@command' returned $exit\n";
+    }
+    die "Unknown error on '@command'\n";
+  }
+} else {
+  @roles = @ARGV;
+}
+# }}}
+$opt{verbose} and print STDERR "$PROG: installing roles: @roles\n";
+# sync all the roles down
+for my $role (@roles) {
+  # Roles MUST begin with a letter.  All else is reserved.
+  if ($role !~ m/^[a-zA-Z]/) {
+    die "Role '$role' does not begin with a letter!";
+  }
+  # sync
+  run_command(LIBEXEC_DIR.'/slack-sync',
+    @backend_flags, $role);
+  # fixperms
+  run_command(LIBEXEC_DIR.'/slack-runscript',
+    @backend_flags, 'fixperms', $role);
+  # preinstall
+  run_command(LIBEXEC_DIR.'/slack-runscript',
+    @backend_flags, 'preinstall', $role);
+  # installfiles
+  run_command(LIBEXEC_DIR.'/slack-installfiles',
+    @backend_flags, $role);
+  # postinstall
+  run_command(LIBEXEC_DIR.'/slack-runscript',
+    @backend_flags, 'postinstall', $role);
+}
+
+sub run_command (@) {
+  my (@command) = @_;
+  $opt{verbose} and print STDERR "$PROG: Calling '@command'\n";
+  unless (system(@command) == 0) {
+    if ($!) {
+        die "Syserr on system '@command': $!\n";
+    }
+    if ($? & 128) {
+        die "'@command' dumped core\n";
+    }
+    if (my $sig = $? & 127) {
+        die "'@command' caught sig $sig\n";
+    }
+    if (my $exit = $? >> 8) {
+        die "'@command' returned $exit\n";
+    }
+    die "Unknown error on '@command'\n";
+  }
+}

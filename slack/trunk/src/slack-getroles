@@ -1,0 +1,230 @@
+#!/usr/bin/perl -w
+# $Id$
+# vim:sw=2
+# vim600:fdm=marker
+
+# This script is in charge of copying files from the (possibly remote)
+# master directory to a local cache, using rsync
+
+require 5.006;
+use warnings FATAL => qw(all);
+use strict;
+
+use File::Path;
+use Sys::Hostname;
+
+use constant DEFAULT_CONFIG_FILE => '/etc/slack.conf';
+
+my @rsync = ('rsync',
+              '--links',
+              '--times',
+              '--delete',
+              );
+
+(my $PROG = $0) =~ s#.*/##;
+
+my $hostname = hostname;
+
+sub sync_list ();
+
+########################################
+# Environment
+# Helpful prefix to die messages
+$SIG{__DIE__} = sub { die "FATAL[$PROG]: @_"; };
+# Set a reasonable umask
+umask 077;
+# Get out of wherever (possibly NFS-mounted) we were
+chdir("/")
+  or die "Could not chdir /: $!";
+# Autoflush on STDERR
+select((select(STDERR), $|=1)[0]);
+
+########################################
+# Config and option parsing {{{
+my $usage = <<EOF;
+Usage: $PROG [options] <role> [<role>...]
+
+Options:
+  -h, -?, --help
+      Print this help message and exit.
+
+  -v, --verbose
+      Be verbose
+
+  -C, --config  FILE
+      Use this config file instead of /etc/slack.conf
+
+  -s, --source  DIR
+      Source for slack files
+
+  -c, --cache  DIR
+      Local cache directory for slack files
+
+  -r, --root  DIR
+      Root destination for slack files
+
+  -n, --dry-run
+      Don't write any files to disk -- just report what would have been done.
+
+  -b, --backups  DIR
+      Make backups of existing files and put them in this directory.
+EOF
+
+# Option defaults
+my %opt = (
+  config => DEFAULT_CONFIG_FILE,
+  verbose => 0,
+);
+# A special option to shut off verbose
+$opt{quiet} = sub { $opt{verbose} = 0; };
+
+# Reads through the config file
+sub read_config () {
+  my $config = $opt{config};
+  open(CONFIG, "<", $config)
+    or die "Could not open config file '$config': $!";
+  while(<CONFIG>) {
+    chomp;
+    s/#.*//; # delete comments
+    s/\s+$//; # delete trailing spaces
+    next if m/^$/; # skip empty lines
+    if (m/^[A-Z_]+=\S+/) {
+      my ($key, $value) = split(/=/, $_, 2);
+      $key =~ tr/A-Z_/a-z-/;
+      if (not defined $opt{$key}) {
+        ($opt{verbose} > 2) and print STDERR "$PROG: Setting '$key' to '$value'\n";
+        $opt{$key} = $value;
+      }
+    } else {
+      warn "WARNING[$PROG]: Garbage line '$_' in '$config' line $.\n";
+    }
+  }
+  close(CONFIG)
+    or die "Could not close config file: $!";
+}
+
+# Collect options
+{
+    use Getopt::Long;
+    Getopt::Long::Configure ("bundling");
+    GetOptions(\%opt,
+      'verbose|v+',
+      'quiet',
+      'help|h|?',
+      'backups|b=s',
+      'config|C=s',
+      'dry-run|n',
+      'source|s=s',
+      'cache|c=s',
+      'root|r=s',
+      ) or die $usage;
+    if ($opt{help}) {
+        print $usage;
+        exit 0;
+    }
+    read_config;
+}
+
+# Arguments are required
+die "Role list not defined!\n\n$usage" unless $opt{'role-list'};
+die "No cache defined!\n\n$usage" unless $opt{cache};
+
+# Prepare for backups
+if ($opt{backups}) {
+  # Make sure backup directory exists
+  unless (-d $opt{backups}) {
+    $opt{verbose} and print STDERR "$PROG: Creating backup directory '$opt{backups}'\n";
+    if (not $opt{'dry-run'}) {
+      mkpath($opt{backups})
+        or die "Could not mkpath backup dir '$opt{backups}': $!\n";
+    }
+  }
+  push @rsync, '--backup', "--backup-dir=$opt{backups}";
+}
+# Look at source type, and add options if necessary
+if ($opt{source} =~ m/^[a-zA-Z_@\.-]+::/) {
+  # This is tunnelled rsync, and so needs an extra option
+  push @rsync, '-e', 'ssh';
+}
+
+# Pass options along to rsync
+if ($opt{'dry-run'}) {
+  push @rsync, '--dry-run';
+}
+# Pass options along to rsync
+if ($opt{'verbose'}) {
+  push @rsync, '--verbose';
+}
+# }}}
+
+# Copy a non-local list locally
+if ($opt{'role-list'} =~ m#^[a-zA-Z_@\.-]+:#) {
+  sync_list();
+}
+
+# Read in the roles list
+my @roles = ();
+my $host_found = 0;
+$opt{verbose} and print STDERR "$PROG: Reading '$opt{'role-list'}'\n";
+open(ROLES, "<", $opt{'role-list'})
+  or die "Could not open '$opt{'role-list'}' for reading: $!\n";
+while(<ROLES>) {
+  s/#.*//;  # Strip comments
+  chomp;
+  if (s/^$hostname:\s*//) {
+    $host_found++;
+    push @roles, split();
+  }
+}
+close(ROLES)
+  or die "Could not close '$opt{'role-list'}': $!\n";
+if (not $host_found) {
+  die "Host '$hostname' not found in '$opt{'role-list'}'!\n";
+}
+print join("\n", @roles), "\n";
+exit 0;
+
+sub sync_list () {
+  my $source = $opt{'role-list'};
+  my $destination = $opt{cache} . "/_role_list";
+  unless (-d $opt{cache}) {
+    eval { mkpath($opt{cache}); };
+    die "Could not mkpath '$opt{cache}': $@\n" if $@;
+  }
+  # All this to run an rsync command
+  my @command = (@rsync, $source, $destination);
+  $opt{verbose} and print STDERR "$PROG: Calling '@command'\n";
+  my ($rsync_pid);
+  if ($rsync_pid = fork) {
+    # Parent
+  } elsif (defined $rsync_pid) {
+    # Child
+    open(STDIN, "<", "/dev/null")
+      or die "Could not redirect STDIN from /dev/null\n";
+    # This redirection is necessary because rsync sends
+    #   verbose output to STDOUT
+    open(STDOUT, ">&", \*STDERR)
+      or die "Could not redirect STDOUT to STDERR\n";
+    exec(@command);
+    die "Could not exec '@command': $!\n";
+  } else {
+    die "Could not fork: $!\n";
+  }
+  my $kid = waitpid($rsync_pid, 0);
+  if ($kid != $rsync_pid) {
+    die "waitpid returned $kid\n";
+  } elsif ($?) {
+    if ($? & 128) {
+        die "'@command' dumped core\n";
+    }
+    if (my $sig = $? & 127) {
+        die "'@command' caught sig $sig\n";
+    }
+    if (my $exit = $? >> 8) {
+        die "'@command' returned $exit\n";
+    }
+    die "Unknown error on '@command'\n";
+  }
+  $opt{'role-list'} = $destination;
+}
+

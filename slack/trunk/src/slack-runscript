@@ -1,0 +1,171 @@
+#!/usr/bin/perl -w
+# $Id$
+# vim:sw=2
+# vim600:fdm=marker
+
+# This script is in charge of copying files from the (possibly remote)
+# master directory to a local cache, using rsync
+
+require 5.006;
+use warnings FATAL => qw(all);
+use strict;
+
+use File::Path;
+use File::Find;
+
+use constant DEFAULT_CONFIG_FILE => '/etc/slack.conf';
+
+(my $PROG = $0) =~ s#.*/##;
+
+########################################
+# Environment
+# Helpful prefix to die messages
+$SIG{__DIE__} = sub { die "FATAL[$PROG]: @_"; };
+# Set a reasonable umask
+umask 077;
+# Autoflush on STDERR
+select((select(STDERR), $|=1)[0]);
+# Get out of wherever (possibly NFS-mounted) we were
+chdir('/')
+  or die "Could not chdir '/': $!";
+
+# Start with a clean environment
+%ENV = (
+  PATH => '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+);
+
+########################################
+# Config and option parsing {{{
+my $usage = <<EOF;
+Usage: $PROG [options] <action> <role> [<role>...]
+
+Options:
+  -h, -?, --help
+      Print this help message and exit.
+
+  -v, --verbose
+      Be verbose
+
+  -C, --config  FILE
+      Use this config file instead of /etc/slack.conf
+
+  -s, --source  DIR
+      Source for slack files [ignored]
+
+  -c, --cache  DIR
+      Local cache directory for slack files
+
+  -r, --root  DIR
+      Root destination for slack files [ignored]
+
+  -n, --dry-run
+      Don't write any files to disk -- just report what would have been done.
+
+  -b, --backups  DIR
+      Make backups of existing files and put them in this directory. [ignored]
+EOF
+
+# Option defaults
+my %opt = (
+  config => DEFAULT_CONFIG_FILE,
+  verbose => 0,
+);
+# A special option to shut off verbose
+$opt{quiet} = sub { $opt{verbose} = 0; };
+
+# Reads through the config file
+sub read_config () {
+  my $config = $opt{config};
+  open(CONFIG, "<", $config)
+    or die "Could not open config file '$config': $!";
+  while(<CONFIG>) {
+    chomp;
+    s/#.*//; # delete comments
+    s/\s+$//; # delete trailing spaces
+    next if m/^$/; # skip empty lines
+    if (m/^[A-Z_]+=\S+/) {
+      my ($key, $value) = split(/=/, $_, 2);
+      $key =~ tr/A-Z_/a-z-/;
+      if (not defined $opt{$key}) {
+        ($opt{verbose} > 2) and print STDERR "$PROG: Setting '$key' to '$value'\n";
+        $opt{$key} = $value;
+      }
+    } else {
+      warn "WARNING[$PROG]: Garbage line '$_' in '$config' line $.\n";
+    }
+  }
+  close(CONFIG)
+    or die "Could not close config file: $!";
+}
+
+# Collect options
+{
+    use Getopt::Long;
+    Getopt::Long::Configure ("bundling");
+    GetOptions(\%opt,
+      'verbose|v+',
+      'quiet',
+      'help|h|?',
+      'backups|b=s',
+      'config|C=s',
+      'dry-run|n',
+      'source|s=s',
+      'cache|c=s',
+      'root|r=s',
+      ) or die $usage;
+    if ($opt{help}) {
+        print $usage;
+        exit 0;
+    }
+    read_config;
+}
+
+my $action = shift || die "No script to run!\n\n$usage";
+# Arguments are required
+die "No roles given!\n\n$usage" unless @ARGV;
+die "No cache defined!\n\n$usage" unless $opt{cache};
+
+# }}}
+
+# Run the script for each role given, if it exists and is executable
+for my $full_role (@ARGV) {
+  my $base_role = (split /\./, $full_role, 2)[0];
+  my $script_to_run = "$opt{cache}/roles/$base_role/scripts/$action";
+  unless (-x $script_to_run) {
+    if (-e _) {
+      # A helpful warning
+      warn "WARNING[$PROG]: Skipping '$script_to_run' because it's not executable\n";
+    }
+    next;
+  }
+  my $dir;
+  if ($action eq 'fixperms') {
+    $dir = "$opt{cache}/roles/$base_role/files";
+  } else {
+    $dir = "$opt{cache}/roles/$base_role/scripts";
+  }
+  my @command = ($script_to_run, $full_role);
+  $opt{verbose} and print STDERR "$PROG: Calling '@command' in '$dir'\n";
+  if (not $opt{'dry-run'}) {
+    chdir($dir)
+      or die "Could not chdir '$dir': $!\n";
+    unless (system(@command) == 0) {
+      if ($!) {
+          die "Syserr on system '@command': $!\n";
+      }
+      if ($? & 128) {
+          die "'@command' dumped core\n";
+      }
+      if (my $sig = $? & 127) {
+          die "'@command' caught sig $sig\n";
+      }
+      if (my $exit = $? >> 8) {
+          die "'@command' returned $exit\n";
+      }
+      die "Unknown error on '@command'\n";
+    }
+    chdir('/')
+      or die "Could not chdir '/': $!\n"
+  }
+}
+

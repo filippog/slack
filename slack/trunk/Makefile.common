@@ -1,0 +1,18 @@
+# Common code included in every Makefile
+# $Id$
+
+DESTDIR		=
+
+prefix		= /
+exec_prefix	= /usr
+sysconfdir	= ${prefix}/etc
+mandir		= ${exec_prefix}/share/man
+sbindir		= ${exec_prefix}/sbin
+libexecdir	= ${exec_prefix}/lib
+localstatedir	= ${prefix}/var
+
+slack_libexecdir	= ${libexecdir}/slack
+slack_localstatedir= ${localstatedir}/lib/slack
+
+INSTALL		= install
+MKDIR		= mkdir -p
