@@ -1,3 +1,9 @@
+2004-07-17  Alan Sundell  <alan@sundell.net>
+
+	* Version 0.5
+	* require rsync 2.6.0
+	* slack-sync: dereference symlinks (--copy-links)
+
 2004-06-03  Alan Sundell  <alan@sundell.net>
 
 	* Version 0.4
@@ -13,8 +19,8 @@
 	    * [modules]: bump verbosity thresholds down one
 
 	* slack-sync: transfer files with --perms, so when people make old
-            files (non-)executable in the repository, the change will 
-            propagate.
+	    files (non-)executable in the repository, the change will 
+	    propagate.
 
 	* slack-installfiles: mkdir $opt{root} in an eval
 
