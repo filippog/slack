@@ -1,3 +1,19 @@
 slack is a configuration management system designed to appeal to lazy admins
 (like me).  It's an evolution from the usual "put files in some central
 directory" that is faily common practice.
+
+-----
+
+Setting up slack for rsyncd over ssh
+
+1) Generate a public/private keypair for SSH
+2) Put the private key on clients in /root/.ssh/slack-key
+3) Add a stanza like this on clients to /root/.ssh/config:
+Host slack-master
+        User slack
+        IdentityFile /root/.ssh/slack-key
+
+4) Pick a master server, make a CNAME "slack-master" pointed at it
+5) Install the slack-master package on that server
+6) Put the public key on that server in ~slack/.ssh/authorized_keys (see the
+    example in /usr/share/doc/slack-master)

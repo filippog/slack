@@ -1,14 +1,18 @@
 # $Id$
-* make level-1 verbosity less noisy, easier to read
-* propagate verbosity levels down to modules
-
+PRE-1.0:
+* slack: make level-1 verbosity less noisy, easier to read
+* slack: propagate verbosity levels down to modules
+* slack-sync: chmod cache 700
+* abstract out common code somehow
+* separate slack-runscript, slack-runfixfiles
+* allow ./configure to set paths
 * install private key and ssh config when installing (or maybe leave to a role)
-
-* record what roles have been installed
 * allow username in urls
 * backup directories
-
 * manpages for slack, slack-backends
+--------
+LATER:
+* record what roles have been installed
 
 * build in support for heterogenous underlying distros, like subsets have
   (maybe just assing subroles)
