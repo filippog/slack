@@ -1,3 +1,13 @@
+slack-master (0.2-1) stable; urgency=low
+
+  * debian/postinst,postrm: add/remove a "slack" user and group if they
+    don't already exist
+  * move authorized_keys to an example file in doc dir
+  * slack-master.cron: don't break on --remove
+  * slack-update-source: forget about -r; make ~slack/source mode 0750
+
+ -- Alan Sundell <alan@sundell.net>  Tue, 29 May 2004 15:50:00 -0700
+
 slack-master (0.1-1) stable; urgency=low
 
   * Initial Version.
