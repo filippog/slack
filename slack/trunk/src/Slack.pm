@@ -138,7 +138,7 @@ sub check_system_exit (@) {
     croak "'@command' caught sig $sig";
   }
   if (my $exit = $? >> 8) {
-    croak "'@command' returned $exit";
+    croak "'@command' exited $exit";
   }
   if ($!) {
     croak "Syserr on system '@command': $!";
