@@ -106,6 +106,12 @@ sub install_files ($) {
   my @command = (@rsync, $source, $destination);
   my ($rsync_pid, $rsync_fh);
 
+  if (not -d $source) {
+    ($opt{verbose} > 0) and
+        print STDERR "$PROG: No files to install -- '$source' does not exist\n";
+    return;
+  }
+
   # Try to give some sensible message here
   if ($opt{verbose} > 0) {
     if ($opt{'dry-run'}) {

@@ -1,3 +1,7 @@
+2005-02-09  Alan Sundell  <alan@sundell.net>
+	* Version 0.13.2
+	* slack-installfiles: fail gracefully if no files to install
+
 2005-01-08  Alan Sundell  <alan@sundell.net>
 	* Version 0.13.1
 	* test: added tests for each of the backends

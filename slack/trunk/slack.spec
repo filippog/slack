@@ -1,6 +1,6 @@
 Summary: slack configuration management tool
 Name: slack
-Version: 0.13.1
+Version: 0.13.2
 Release: 1
 License: GPL
 Group: System Environment/Libraries
@@ -48,7 +48,11 @@ if [ $1 = 0 ] ; then
 fi
 
 %changelog
-* Wed Jan 08 2005 Alan Sundell <alan@sundell.net> 0.13.1-1
+* Wed Feb 09 2005 Alan Sundell <alan@sundell.net> 0.13.2-1
+- New upstream source (see ChangeLog).
+    allows non-existent files dir
+
+* Sat Jan 08 2005 Alan Sundell <alan@sundell.net> 0.13.1-1
 - New upstream source (see ChangeLog).
     adds unit tests
     slack-runscript mentions when it skips a non-executable script

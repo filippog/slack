@@ -2,7 +2,7 @@
 
 use strict;
 use warnings FATAL => qw(all);
-use Test::More tests => 12;
+use Test::More tests => 13;
 use test_util;
 import test_util qw(gen_wanted);
 
@@ -121,5 +121,16 @@ my @roles = qw(role1);
 
     ok((not -f $test_config{'backup-dir'}."/".$testfile),
         "backup file not created when file not changed");
+  }
+
+
+  # Test that we succeed when no files to install
+  {
+    rmtree($stage);
+    die "Could not remove stage before testing" if -e $stage;
+
+    # Now run the install
+    my $return = system("../src/slack-installfiles -C $test_config_file $role 2> /dev/null");
+    ok(($return == 0 and $? == 0), "succeed on missing files dir");
   }
 }

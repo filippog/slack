@@ -1,3 +1,10 @@
+slack (0.13.2-1) stable; urgency=low
+
+  * New upstream source (see ChangeLog).
+        allows non-existent files dir
+  
+ -- Alan Sundell <alan@sundell.net>  Wed, 09 Feb 2005 11:00:00 -0800
+
 slack (0.13.1-1) stable; urgency=low
 
   * New upstream source (see ChangeLog).
@@ -6,7 +13,7 @@ slack (0.13.1-1) stable; urgency=low
             when --verbose is on
         fix bug causing undefined subroutine reference when a backend failed
   
- -- Alan Sundell <alan@sundell.net>  Wed, 08 Jan 2005 20:00:00 -0800
+ -- Alan Sundell <alan@sundell.net>  Sat, 08 Jan 2005 20:00:00 -0800
 
 slack (0.13-1) stable; urgency=low
 
@@ -16,7 +23,7 @@ slack (0.13-1) stable; urgency=low
             environment
         minor fixes for bugs introduced in 0.12.2
   
- -- Alan Sundell <alan@sundell.net>  Wed, 21 Dec 2004 16:00:00 -0800
+ -- Alan Sundell <alan@sundell.net>  Wed, 22 Dec 2004 16:00:00 -0800
 
 slack (0.12.2-1) stable; urgency=low
 
