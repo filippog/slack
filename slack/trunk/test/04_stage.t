@@ -2,14 +2,19 @@
 
 use strict;
 use warnings FATAL => qw(all);
-use Test::More tests => 11;
+use Test::More tests => 14;
 use test_util;
 import test_util qw(gen_wanted);
 
 use File::Find;
+use File::Path;
 
 # For the scripts we will run
 $ENV{PERL5LIB} = '../src';
+
+# get rid of the stage
+rmtree($test_config{stage});
+die "Could not remove stage for testing" if (-e $test_config{stage});
 
 # First, we're playing around with role1
 {
@@ -26,7 +31,7 @@ $ENV{PERL5LIB} = '../src';
     my $return = system("../src/slack-stage -C $test_config_file $role 2> /dev/null");
     ok(($return == 0 and $? == 0), "$role stage return");
 
-    ok((-d $stage), "$role cache dir created");
+    ok((-d $stage), "$role stage dir created");
 
     # Compare the lists of files in the two directories
     {
@@ -38,13 +43,13 @@ $ENV{PERL5LIB} = '../src';
           "$stage/$role/files");
       is_deeply($stage_files, $cache_files, "$role file list compare");
     }
-    # role1 has no scripts
   }
+
   {
     my $return = system("../src/slack-stage -C $test_config_file $role.sub 2> /dev/null");
     ok(($return == 0 and $? == 0), "$role.sub stage return");
 
-    ok((-d $stage), "$role.sub cache dir created");
+    ok((-d $stage), "$role.sub stage dir created");
 
     # Compare the lists of files in the two directories
     {
@@ -60,7 +65,6 @@ $ENV{PERL5LIB} = '../src';
           "$stage/$role.sub/files");
       is_deeply($stage_files, $cache_files, "$role.sub file list compare");
     }
-    # role1 has no scripts
 
     # Check that the file in the subrole overrode the file in the base role
     {
@@ -71,7 +75,24 @@ $ENV{PERL5LIB} = '../src';
       is($?, 0, "files in subrole override files in base role");
     }
   }
-  # TODO also need to check that files are deleted
+
+  {
+    # Make some junk in the stage
+    my $testfile = "$stage/$role/files/should_not_be_here";
+    my $testdir = "$stage/$role/scripts";
+    open(TEST, ">", $testfile)
+      or die "open $testfile: $!";
+    print TEST "This should be deleted\n";
+    close(TEST)
+      or die "close $testfile: $!";
+    mkpath($testdir); # will throw exception on failure
+
+    my $return = system("../src/slack-stage -C $test_config_file $role 2> /dev/null");
+    ok(($return == 0 and $? == 0), "$role stage return");
+
+    ok((not -e $testfile), "junk file deleted");
+    ok((not -e $testdir), "junk scripts dir deleted");
+  }
 }
 
 # Just make sure multiple subroles work as expected for role3
@@ -79,6 +100,11 @@ $ENV{PERL5LIB} = '../src';
   my $role = 'role3';
   my $cache = $test_config{cache}."/roles";
   my $stage = $test_config{stage}."/roles";
+
+  # sync the role so we've got something known to work with
+  (system("../src/slack-sync -C $test_config_file $role 2> /dev/null") == 0)
+      or die "Couldn't sync $role for testing"; 
+
   {
     my $return = system("../src/slack-stage -C $test_config_file $role.sub.sub 2> /dev/null");
     ok(($return == 0 and $? == 0), "$role.sub stage return");
