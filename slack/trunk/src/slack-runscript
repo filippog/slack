@@ -73,6 +73,8 @@ for my $role (@ARGV) {
     if (-e _) {
       # A helpful warning
       warn "WARNING[$PROG]: Skipping '$script_to_run' because it's not executable\n";
+    } elsif ($opt{verbose} > 0) {
+      print STDERR "$PROG: Skipping '$script_to_run' because it doesn't exist\n";
     }
     next;
   }
