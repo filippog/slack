@@ -1,4 +1,5 @@
 2005-01-08  Alan Sundell  <alan@sundell.net>
+	* Version 0.13.1
 	* test: added tests for each of the backends
 	    * testsource: mockup roles for testing
 	    * test_util.pm: common functions, variables for testing
