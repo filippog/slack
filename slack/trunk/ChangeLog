@@ -1,3 +1,9 @@
+2004-07-18  Alan Sundell  <alan@sundell.net>
+
+	* Version 0.6
+	* slack-sync: reduce number of calls to rsync, made some
+	    exception handling more graceful and informative
+
 2004-07-17  Alan Sundell  <alan@sundell.net>
 
 	* Version 0.5
