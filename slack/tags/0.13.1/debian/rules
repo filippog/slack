@@ -1,0 +1,83 @@
+#!/usr/bin/make -f
+# debian.rules file for slack
+# $Id$
+# Copyright 2004 Alan Sundell <alan@sundell.net>
+# Based on the debian.rules file for rsync.
+#   Copyright 1996 by Philip Hands.
+#   Copyright 2001 Colin Walters <walters@debian.org>
+# Based on the  sample debian.rules file - for GNU Hello (1.3).
+#   Copyright 1994,1995 by Ian Jackson.
+# I hereby give you perpetual unlimited permission to copy,
+# modify and relicense this file, provided that you do not remove
+# my name from the file itself.  (I assert my moral right of
+# paternity under the Copyright, Designs and Patents Act 1988.)
+
+
+SHELL =	/bin/bash
+INSTALL = install
+INSTALL_FILE = $(INSTALL) -p    -o root -g root  -m  644
+INSTALL_PROGRAM = $(INSTALL) -p    -o root -g root  -m  755
+INSTALL_SCRIPT = $(INSTALL) -p    -o root -g root  -m  755
+INSTALL_DIR = $(INSTALL) -p -d -o root -g root  -m  755
+INSTALL_PRIV_DIR = $(INSTALL) -p -d -o root -g root  -m  700
+
+# backwards compatibility stuff, from dpkg-architecture manpage
+DEB_BUILD_ARCH := $(shell dpkg --print-installation-architecture)
+DEB_BUILD_GNU_CPU := $(patsubst hurd-%,%,$(DEB_BUILD_ARCH))
+ifeq ($(filter-out hurd-%,$(DEB_BUILD_ARCH)),)
+DEB_BUILD_GNU_SYSTEM := gnu
+else
+DEB_BUILD_GNU_SYSTEM := linux
+endif
+DEB_BUILD_GNU_TYPE=$(DEB_BUILD_GNU_CPU)-$(DEB_BUILD_GNU_SYSTEM)
+
+DEB_HOST_ARCH=$(DEB_BUILD_ARCH)
+DEB_HOST_GNU_CPU=$(DEB_BUILD_GNU_CPU)
+DEB_HOST_GNU_SYSTEM=$(DEB_BUILD_GNU_SYSTEM)
+DEB_HOST_GNU_TYPE=$(DEB_BUILD_GNU_TYPE)
+
+DEB_BUILD_GNU_TYPE := $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+DEB_HOST_GNU_TYPE := $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+
+
+build:
+	touch build
+
+clean: checkdir
+	-rm -f build
+	-rm -rf *~ debian/tmp debian/*~ debian/*.bak debian/files* debian/substvars
+
+binary-indep:	checkroot build
+	-rm -rf debian/tmp
+	$(INSTALL_DIR) 	debian/tmp \
+			debian/tmp/DEBIAN \
+			debian/tmp/usr/sbin \
+			debian/tmp/usr/share/doc/slack \
+			debian/tmp/usr/lib/slack \
+			debian/tmp/etc \
+			debian/tmp/var/lib \
+			debian/tmp/var/cache
+	$(MAKE) install DESTDIR=`pwd`/debian/tmp
+	$(INSTALL_FILE) debian/changelog debian/tmp/usr/share/doc/slack/changelog.Debian
+	$(INSTALL_FILE) README ChangeLog TODO debian/tmp/usr/share/doc/slack/
+	gzip -9fr `find debian/tmp/usr/share/doc/ debian/tmp/usr/share/man/ -type f`
+	$(INSTALL_SCRIPT) debian/prerm   debian/tmp/DEBIAN
+	(cd debian/tmp; find ./etc -type f | sed s,.,,) > debian/tmp/DEBIAN/conffiles
+	chown -R root.root debian/tmp
+	dpkg-gencontrol -isp
+	dpkg --build debian/tmp ..
+
+binary-arch:	checkroot clean build
+# nothing to do
+
+# Below here is fairly generic really
+
+binary:		binary-indep binary-arch
+
+checkdir:
+	@test -f debian/rules
+
+checkroot: checkdir
+	@test 0 = `id -u` || { echo "Error: not super-user"; exit 1; }
+
+.PHONY: binary binary-arch binary-indep clean checkroot checkdir

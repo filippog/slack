@@ -1,0 +1,256 @@
+#!/usr/bin/perl -w
+# $Id$
+# vim:sw=2
+# vim600:fdm=marker
+
+# This script is in charge of copying files from the local cache
+# directory to the local stage, building a unified single tree onstage
+# from the multiple trees that are the role + subroles in the cache
+
+require 5.006;
+use warnings FATAL => qw(all);
+use strict;
+use sigtrap qw(die untrapped normal-signals
+               stack-trace any error-signals);
+
+use File::Path;
+use File::Find;
+
+use constant LIB_DIR => '/usr/lib/slack';
+use lib LIB_DIR;
+use Slack;
+
+my @rsync = ('rsync',
+              '--recursive',
+              '--times',
+              '--perms',
+              '--sparse',
+              );
+
+(my $PROG = $0) =~ s#.*/##;
+
+sub check_stage ();
+sub sync_role ($@);
+sub apply_default_perms_to_role ($);
+
+########################################
+# Environment
+# Helpful prefix to die messages
+$SIG{__DIE__} = sub { die "FATAL[$PROG]: @_"; };
+# Set a reasonable umask
+umask 077;
+# Get out of wherever (possibly NFS-mounted) we were
+chdir("/")
+  or die "Could not chdir /: $!";
+# Autoflush on STDERR
+select((select(STDERR), $|=1)[0]);
+
+########################################
+# Config and option parsing {{{
+my $usage = Slack::default_usage("$PROG [options] <role> [<role>...]");
+# Option defaults
+my %opt = ();
+Slack::get_options(
+  opthash => \%opt,
+  usage => $usage,
+  required_options => [ qw(cache stage) ],
+);
+
+# Arguments are required
+die "No roles given!\n\n$usage" unless @ARGV;
+
+# Prepare for backups
+if ($opt{backup} and $opt{'backup-dir'}) {
+  # Make sure backup directory exists
+  unless (-d $opt{'backup-dir'}) {
+    ($opt{verbose} > 0) and print STDERR "Creating backup directory '$opt{'backup-dir'}'\n";
+    if (not $opt{'dry-run'}) {
+      eval { mkpath($opt{'backup-dir'}); };
+      die "Could not mkpath backup dir '$opt{'backup-dir'}': $@\n" if $@;
+    }
+  }
+  push(@rsync, "--backup", "--backup-dir=$opt{'backup-dir'}");
+}
+
+# Pass options along to rsync
+if ($opt{'dry-run'}) {
+  push @rsync, '--dry-run';
+}
+# Pass options along to rsync
+if ($opt{'verbose'} > 1) {
+  push @rsync, '--verbose';
+}
+# }}}
+
+# copy over the new files
+for my $full_role (@ARGV) {
+  # Split the full role (e.g. google.foogle.woogle) into components
+  my @role_parts = split(/\./, $full_role);
+  # Reassemble parts one at a time onto @role and sync as we go,
+  # so we do "google", then "google.foogle", then "google.foogle.woogle"
+  my @role = ();
+  # Make sure we've got the right perms before we copy stuff down
+  check_stage();
+  while (defined (my $part = shift @role_parts)) {
+    push @role, $part;
+    ($opt{verbose} > 1)
+      and print STDERR "$PROG: Calling sync_role for $full_role, @role\n";
+    sync_role($full_role, @role);
+  }
+
+  apply_default_perms_to_role($full_role);
+}
+exit 0;
+
+# Make sure the stage directory exists and is mode 0700, to protect files
+# underneath in transit
+sub check_stage () {
+  my $stage = $opt{stage} . "/roles";
+  if (not $opt{'dry-run'}) {
+    if (not -d $stage) {
+      ($opt{verbose} > 0) and print STDERR "$PROG: Creating '$stage'\n";
+        eval { mkpath($stage); };
+        die "Could not mkpath cache dir '$stage': $@\n" if $@;
+    }
+    ($opt{verbose} > 0) and print STDERR "$PROG: Checking perms on '$stage'\n";
+    if ($> != 0) {
+      warn "WARNING[$PROG]: Not superuser; unable to chown files\n";
+    } else {
+      chown(0, 0, $stage)
+        or die "Could not chown 0:0 '$stage': $!\n";
+    }
+    chmod(0700, $stage)
+      or die "Could not chmod 0700 '$stage': $!\n";
+  }
+}
+
+# Copy the files for a role from CACHE to STAGE
+sub sync_role ($@) {
+  my ($full_role, @role) = @_;
+  my @subdirs;
+  my @this_rsync = @rsync;
+
+  # If we were only given one role part, we're in the base role
+  my $in_base_role = (scalar @role == 1);
+
+  # For the base role, do both files and scripts.
+  # For all subroles, just do the files.
+  # (If we wanted script subroles to work like files, we'd get rid of this)
+  if ($in_base_role) {
+    @subdirs = qw(files scripts);
+  } else {
+    @subdirs = qw(files);
+  }
+
+  # For the base role, delete any files that don't exist in the cache.
+  # Not for the subrole (otherwise we'll delete all files not in
+  # the subrole, which may be most of them!)
+  if ($in_base_role) {
+    push @this_rsync, "--delete";
+  }
+
+  for my $subdir (@subdirs) {
+    # (a)     => a/files 
+    # (a,b,c) => a/files.b.c
+    my $src_path = $role[0].'/'.join(".", $subdir, @role[1 .. $#role]);
+    # This one's a little simpler:
+    my $dst_path = $full_role.'/'.$subdir;
+
+    # final / is important for rsync
+    my $source = $opt{cache} . "/roles/" . $src_path . "/";
+    my $destination = $opt{stage} . "/roles/" . $dst_path . "/";
+    if (not -d $destination and -d $source) {
+        ($opt{verbose} > 0) and print STDERR "$PROG: Creating '$destination'\n";
+        if (not $opt{'dry-run'}) {
+          eval { mkpath($destination); };
+          die "Could not mkpath stage dir '$destination': $@\n" if $@;
+        }
+    }
+
+    # We no longer require the source to exist
+    if (not -d $source) {
+      # but we need to remove the destination if the source
+      # doesn't exist and we're in the base role
+      if ($in_base_role) {
+        rmtree($destination);
+        # rmtree() doesn't throw exceptions or give a return value useful
+        # for detecting failure, so we just check after the fact.
+        die "Could not rmtree '$destination' when '$source' missing\n"
+          if -e $destination;
+      }
+      # if we continue, rsync will fail because source is missing,
+      # so we don't.
+      next;
+    }
+
+    # All this to run an rsync command
+    my @command = (@this_rsync, $source, $destination);
+    ($opt{verbose} > 0) and print STDERR "$PROG: Syncing $src_path with '@command'\n";
+    my ($rsync_pid);
+    if ($rsync_pid = fork) {
+      # Parent
+    } elsif (defined $rsync_pid) {
+      # Child
+      open(STDIN, "<", "/dev/null")
+        or die "Could not redirect STDIN from /dev/null\n";
+      # This redirection is necessary because rsync sends
+      #   verbose output to STDOUT
+      open(STDOUT, ">&STDERR")
+        or die "Could not redirect STDOUT to STDERR\n";
+      exec(@command);
+      die "Could not exec '@command': $!\n";
+    } else {
+      die "Could not fork: $!\n";
+    }
+    my $kid = waitpid($rsync_pid, 0);
+    if ($kid != $rsync_pid) {
+      die "waitpid returned $kid\n";
+    } elsif ($?) {
+      Slack::check_system_exit(@command);
+    }
+  }
+}
+
+# This just takes the base role, and chmods everything under it
+sub apply_default_perms_to_role ($) {
+  my ($role) = @_;
+  my $destination = $opt{stage} . "/roles/" . $role;
+  ($opt{verbose} > 0) and print STDERR "$PROG: Setting default perms on $destination\n";
+  if ($> != 0) {
+    warn "WARNING[$PROG]: Not superuser; won't be able to chown files\n";
+  }
+  # Use File::Find to recurse the directory
+  find({
+      # The "wanted" subroutine is called for every directory entry
+      wanted => sub {
+        return if $opt{'dry-run'};
+        ($opt{verbose} > 2) and print STDERR "$File::Find::name\n";
+        if (-l) {
+          # symlinks shouldn't be in here,
+          #     since we dereference when copying
+          warn "WARNING[$PROG]: Skipping symlink at $File::Find::name: $!\n";
+          return;
+        } elsif (-f _) { # results of last stat saved in the "_"
+          if (-x _) {
+            chmod 0555, $_
+              or die "Could not chmod 0555 $File::Find::name: $!";
+          } else {
+            chmod 0444, $_
+              or die "Could not chmod 0444 $File::Find::name: $!";
+          }
+        } elsif (-d _) {
+          chmod 0755, $_
+            or die "Could not chmod 0755 $File::Find::name: $!";
+        } else {
+          warn "WARNING[$PROG]: Unknown file type at $File::Find::name: $!\n";
+        }
+        return if $> != 0; # skip chowning if not superuser
+        chown 0, 0, $_
+          or die "Could not chown 0:0 $File::Find::name: $!";
+      },
+      # end of wanted function
+    },
+    # way down here, we have the directory to traverse with File::Find
+    $destination,
+  );
+}
