@@ -1,11 +1,19 @@
-2004-01-08  Alan Sundell  <alan@sundell.net>
+2005-01-08  Alan Sundell  <alan@sundell.net>
 	* test: added tests for each of the backends
 	    * testsource: mockup roles for testing
 	    * test_util.pm: common functions, variables for testing
 	    * gen_config_file: generate config files with full paths
 			       for testing
+	* test: added tests for the frontend
+	* slack: call check_system_exit with full name (fixes undefined
+	    subroutine error when a backend failed)
+	* Slack.pm: say commands "exited" with their exit code,
+	    rather than "returned"
+	* slack-stage: in the base role, delete the destination if the
+	    source doesn't exist
+	* slack-sync: remove unused variable
 
-2004-01-05  Alan Sundell  <alan@sundell.net>
+2005-01-05  Alan Sundell  <alan@sundell.net>
 	* slack-getroles: add a --remote-role-list option to force local sync
 	* slack-sync: we don't need File::Find anymore
 	* slack-runscript: mention when we skip a non-existant script
