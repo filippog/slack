@@ -164,7 +164,7 @@ if ($opt{'verbose'} > 1) {
 # }}}
 
 # Copy a non-local list locally
-if ($opt{'role-list'} =~ m#^[a-zA-Z_@\.-]+:#) {
+if ($opt{'role-list'} =~ m#^[\w@\.-]+:#) {
   sync_list();
 }
 
