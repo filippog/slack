@@ -47,6 +47,10 @@ $usage .= <<EOF;
 
   --role-list
       Role list location (can be relative to SOURCE)
+
+  --remote-role-list
+      Role list is remote and should be copied down with rsync
+        (implied by certain forms of role list or SOURCE)
 EOF
 
 # Option defaults
@@ -55,6 +59,7 @@ Slack::get_options(
   opthash => \%opt,
   command_line_options => [
     'role-list=s',
+    'remote-role-list',
   ],
   required_options => [ qw(role-list hostname) ],
   usage => $usage,
@@ -93,8 +98,13 @@ unless ($opt{'role-list'} =~ m#^/# or
   $opt{'role-list'} = $opt{source} . '/' . $opt{'role-list'};
 }
 
-# Copy a non-local list locally
+# auto-detect remote role list
 if ($opt{'role-list'} =~ m#^[\w@\.-]+:#) {
+  $opt{'remote-role-list'} = 1;
+}
+
+# Copy a remote list locally
+if ($opt{'remote-role-list'}) {
   # We need a cache directory if the role list is not local
   if (not defined $opt{cache}) {
     die "Remote path to role-list given, but cache not defined!\n\n$usage\n";

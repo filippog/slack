@@ -1,3 +1,6 @@
+2004-01-05  Alan Sundell  <alan@sundell.net>
+	* slack-getroles: add a --remote-role-list option to force local sync
+
 2005-01-04  Alan Sundell  <alan@sundell.net>
 	* added support for "make dist"
 	* slack-getroles: don't prepend source for paths to role-list
