@@ -1,6 +1,9 @@
 # Common code included in every Makefile
 # $Id$
 
+PACKAGE=slack
+VERSION=0.13
+
 DESTDIR		=
 
 prefix		= /

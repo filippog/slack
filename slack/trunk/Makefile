@@ -6,6 +6,9 @@ include	Makefile.common
 TARGETS = all install install-bin install-conf clean distclean realclean
 SUBDIRS = doc src
 
+distdir = $(PACKAGE)-$(VERSION)
+
+
 $(TARGETS)::
 	@set -e; \
 	 for i in $(SUBDIRS); do $(MAKE) -C $$i $@ ; done
@@ -17,3 +20,14 @@ deb:
 
 clean distclean realclean::
 	./debian/rules clean
+
+dist: distclean
+	mkdir ../$(distdir)
+	rsync -a --exclude=CVS --delete-excluded . ../$(distdir)/
+	chmod -R a+rX ../$(distdir)
+	cd .. ; \
+	    tar cvfp $(distdir).tar $(distdir)
+	rm -rf ../$(distdir)
+	gzip -9f ../$(distdir).tar
+	chmod a+r ../$(distdir).tar.gz
+	@ls -l ../$(distdir).tar.gz
