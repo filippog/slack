@@ -3,7 +3,7 @@
 	* slack,Slack.pm,slack-getroles: add a --hostname option,
 	    use that to select roles when provided.
 	* slack-runscript: export these options to the environment:
-		root, cache, source, stage, hostname, verbose
+		root, stage, hostname, verbose
 	* slack: add --no-sync option to skip syncing
 		 add --libexec-dir option for testing
 		 reclaim run_command() and rename it run_backend(),

@@ -51,7 +51,7 @@ fi
 * Wed Dec 22 2004 Alan Sundell <alan@sundell.net> 0.13-1
 - new upstream source (see ChangeLog)
     adds --hostname, --no-sync, --libexec-dir options
-    exports root, cache, source, stage, hostname, verbose to script
+    exports root, stage, hostname, verbose to script
         environment
     minor fixes for bugs introduced in 0.12.2
 

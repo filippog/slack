@@ -19,7 +19,7 @@ use lib LIB_DIR;
 use Slack;
 
 # Export these options to the environment of the script
-my @export_options = qw(root stage cache source hostname verbose);
+my @export_options = qw(root stage hostname verbose);
 
 (my $PROG = $0) =~ s#.*/##;
 
