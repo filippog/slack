@@ -2,4 +2,4 @@
 # vim:filetype=crontab
 #
 # Update the slack-master source
-*/10 * * * *    root    test -x /usr/lib/slack-master/slack-update-source && /usr/lib/slack-master/slack-update-source
+*/10 * * * *    root    test -x /usr/sbin/slack-update-source && /usr/sbin/slack-update-source

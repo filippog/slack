@@ -1,0 +1,5 @@
+usr/share/doc/slack-master
+usr/share/man/man8
+usr/lib/slack-master
+usr/sbin
+etc/cron.d

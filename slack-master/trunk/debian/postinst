@@ -36,7 +36,7 @@ fi
 if [ ! -e "${SLACK_HOME}/source" ] ; then
     mkdir -p "${SLACK_HOME}/source"
     chown slack: "${SLACK_HOME}/source"
-    echo "Please run /usr/lib/slack-master/slack-update-source"
+    echo "Please run slack-update-source"
 fi
 
 if [ ! -f "${SLACK_HOME}/.ssh/authorized_keys" ] ; then
