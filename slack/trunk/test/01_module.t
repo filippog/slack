@@ -42,7 +42,7 @@ can_ok("Slack", qw(default_usage read_config check_system_exit get_options));
 
     system('/bin/false');
     eval "Slack::check_system_exit('');";
-    like($@, qr#'' returned 1\b#, "check_system_exit exit false");
+    like($@, qr#'' exited 1\b#, "check_system_exit exit false");
 
     system('kill -TERM $$');
     eval "Slack::check_system_exit('');";
