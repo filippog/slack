@@ -110,7 +110,7 @@ if (defined $command_line_opt{'verbose'} and
   }
 }
 # propagate these flags to all the backends
-for my $option (qw(config root cache stage source)) {
+for my $option (qw(config root cache stage source hostname)) {
   if ($command_line_opt{$option}) {
     for my $action (keys %backend_flags) {
       push @{$backend_flags{$action}},
@@ -149,7 +149,8 @@ if ($opt{backup} and $opt{'backup-dir'}) {
 
 # Get a list of roles to install from slack-getroles {{{
 if (not @ARGV) {
-  my @command = (LIBEXEC_DIR.'/slack-getroles', @{$backend_flags{'getroles'}});
+  my @command = ($opt{'libexec-dir'}.'/slack-getroles',
+    @{$backend_flags{'getroles'}});
   $opt{verbose} and print STDERR "$PROG: getroles\n";
   ($opt{verbose} > 2) and print STDERR "$PROG: Calling '@command' to get a list of roles for this host.\n";
   my ($roles_pid, $roles_fh);

@@ -27,6 +27,7 @@ my @default_options = (
     'dry-run|n',
     'backup|b',
     'backup-dir=s',
+    'hostname|H=s',
 );
 
 sub default_usage ($) {
@@ -67,6 +68,10 @@ Options:
 
   --backup-dir  DIR
       Put backups into this directory.
+
+  -H, --hostname  HOST
+      Pretend to be running on HOST, instead of the name given by
+        gethostname(2).
 EOF
 }
 # Read options from a config file.  Arguments:
@@ -145,7 +150,8 @@ sub check_system_exit (@) {
 # Arguments
 #       opthash => hashref in which to store options
 #       usage   => usage statement
-#       required_options => arrayref of options to require
+#       required_options => arrayref of options to require -- an exception
+#               will be thrown if these options are not defined
 #       command_line_hash => store options specified on the command line here
 sub get_options {
   my %arg = @_;
@@ -207,6 +213,15 @@ sub get_options {
       verbose => $verbose_config,
   );
 
+  # The "verbose" option gets compared a lot and needs to be defined
+  $arg{opthash}->{verbose} ||= 0;
+
+  # The "hostname" option is set specially if it's not defined
+  if (not defined $arg{opthash}->{hostname}) {
+    use Sys::Hostname;
+    $arg{opthash}->{hostname} = hostname;
+  }
+
   # We can require some options to be set
   if (ref $arg{required_options} eq 'ARRAY') {
     for my $option (@{$arg{required_options}}) {
@@ -215,9 +230,6 @@ sub get_options {
       }
     }
   }
-
-  # The "verbose" option gets compared a lot and needs to be defined
-  $arg{opthash}->{verbose} ||= 0;
 
   return $arg{opthash};
 }

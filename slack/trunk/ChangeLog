@@ -1,5 +1,10 @@
 2004-12-22  Alan Sundell  <alan@sundell.net>
 	* [internal release]
+	* slack,Slack.pm,slack-getroles: add a --hostname option,
+	    use that to select roles when provided.
+
+2004-12-22  Alan Sundell  <alan@sundell.net>
+	* [internal release]
 	* slack: add --no-sync option to skip syncing
 		 add --libexec-dir option for testing
 		 reclaim run_command() and rename it run_backend(),
