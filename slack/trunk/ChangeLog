@@ -1,3 +1,10 @@
+2004-01-08  Alan Sundell  <alan@sundell.net>
+	* test: added tests for each of the backends
+	    * testsource: mockup roles for testing
+	    * test_util.pm: common functions, variables for testing
+	    * gen_config_file: generate config files with full paths
+			       for testing
+
 2004-01-05  Alan Sundell  <alan@sundell.net>
 	* slack-getroles: add a --remote-role-list option to force local sync
 	* slack-sync: we don't need File::Find anymore

@@ -9,16 +9,7 @@ BEGIN {
     use_ok("Slack");
 }
 
-my $test_config_file = './slack.conf';
-my %test_config = (
-    'role-list' => './roles.conf',
-    'source' => './testsource',
-    'cache' => './tmp/cache',
-    'stage' => './tmp/stage',
-    'root' => './tmp/root',
-    'backup-dir' => './tmp/backups',
-    'verbose' => 0,
-);
+use test_util;
 
 # Make sure all the expected funtions are there
 can_ok("Slack", qw(default_usage read_config check_system_exit get_options));
@@ -62,12 +53,12 @@ can_ok("Slack", qw(default_usage read_config check_system_exit get_options));
         skip "can't set ulimit -c", 1
             unless (system("ulimit -c 1024 2> /dev/null") == 0);
 
-        my $coresdir = "./tmp/cores";
+        my $coresdir = "./_cores";
         if (not -d $coresdir) {
             (system("mkdir", "-p", $coresdir) == 0)
                 or skip "Could not mkdir $coresdir", 1;
         }
-        system("cd $coresdir ; ulimit -c 1024 ; kill -SEGV \$\$");
+        system("cd $coresdir && ulimit -c 1024 && kill -SEGV \$\$");
         eval "Slack::check_system_exit('');";
         system("rm -rf $coresdir");
         like($@, qr#'' dumped core\b#, "check_system_exit coredump");
@@ -145,7 +136,7 @@ can_ok("Slack", qw(default_usage read_config check_system_exit get_options));
     local $test_config{config} = $test_config_file;
     local $test_config{hostname} = $hostname;
 
-    is_deeply(\%test_config, $opt, "get_options config keys");
+    is_deeply($opt, \%test_config, "get_options config keys");
 
     eval {
         $cl_opt = {};
