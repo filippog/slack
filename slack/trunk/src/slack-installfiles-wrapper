@@ -12,6 +12,8 @@
 require 5.006;
 use warnings FATAL => qw(all);
 use strict;
+use sigtrap qw(die untrapped normal-signals
+               stack-trace any error-signals);
 
 use File::Path;
 use File::Find;
