@@ -5,6 +5,9 @@
     logging
     use an "install" script, if present, instead of built-in
         file install routines
+    export dry-run, backup, backup-dir if they exist
+    support preview
+    function library for shell scripts
 #################
 
 PRE-1.0:
@@ -13,7 +16,6 @@ PRE-1.0:
       and we can add the time-based subdir to it
     - we generally want only installfiles to do backups (given the existence
         of fixfiles, it's pretty useless for slack-sync)
-    - maybe readconfig() should take a list of config vars to read?
     - if we're doing backups in slack-sync, we need to append
         files(.subrole)?|scripts
     - rsync really hates whatever fixfiles does with symlinks in the
@@ -30,13 +32,6 @@ PRE-1.0:
 * Nagging
     - we want to be able to nag admins about files they have not yet installed
         or scripts they have not yet run
-
-* abstract out common code somehow:
-    - maybe a module (util.pm?)
-    - especially:
-        + readconfig
-        + generic option parsing
-        + some sort of rsync wrapper
 
 * separate slack-runscript, slack-runfixfiles
 * allow ./configure to set paths
