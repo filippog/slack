@@ -22,6 +22,7 @@ my @rsync = ('rsync',
               '--recursive',
               '--links',
               '--times',
+              '--perms',
               '--sparse',
               );
 
@@ -70,8 +71,11 @@ Options:
   -n, --dry-run
       Don't write any files to disk -- just report what would have been done.
 
-  -b, --backups  DIR
-      Make backups of existing files and put them in this directory.
+  -b, --backup
+      Make backups of existing files in ROOT that are overwritten
+
+  --backup-dir  DIR
+      Put backups into this directory.
 EOF
 
 # Option defaults
@@ -96,7 +100,7 @@ sub read_config () {
       my ($key, $value) = split(/=/, $_, 2);
       $key =~ tr/A-Z_/a-z-/;
       if (not defined $opt{$key}) {
-        ($opt{verbose} > 2) and print STDERR "$PROG: Setting '$key' to '$value'\n";
+        ($opt{verbose} > 1) and print STDERR "$PROG: Setting '$key' to '$value'\n";
         $opt{$key} = $value;
       }
     } else {
@@ -115,7 +119,8 @@ sub read_config () {
       'verbose|v+',
       'quiet',
       'help|h|?',
-      'backups|b=s',
+      'backup|b',
+      'backup-dir=s',
       'config|C=s',
       'dry-run|n',
       'source|s=s',
@@ -135,16 +140,16 @@ die "No source defined!\n\n$usage" unless $opt{source};
 die "No cache defined!\n\n$usage" unless $opt{cache};
 
 # Prepare for backups
-if ($opt{backups}) {
+if ($opt{backup} and $opt{'backup-dir'}) {
   # Make sure backup directory exists
-  unless (-d $opt{backups}) {
-    $opt{verbose} and print STDERR "$PROG: Creating backup directory '$opt{backups}'\n";
+  unless (-d $opt{'backup-dir'}) {
+    ($opt{verbose} > 0) and print STDERR "Creating backup directory '$opt{'backup-dir'}'\n";
     if (not $opt{'dry-run'}) {
-      eval { mkpath($opt{backups}); };
-      die "Could not mkpath backup dir '$opt{backups}': $@\n" if $@;
+      eval { mkpath($opt{'backup-dir'}); };
+      die "Could not mkpath backup dir '$opt{'backup-dir'}': $@\n" if $@;
     }
   }
-  push @rsync, '--backup', "--backup-dir=$opt{backups}";
+  push(@rsync, "--backup", "--backup-dir=$opt{'backup-dir'}");
 }
 # Look at source type, and add options if necessary
 if ($opt{source} =~ m/^[a-zA-Z_@\.-]+::/) {
@@ -157,7 +162,7 @@ if ($opt{'dry-run'}) {
   push @rsync, '--dry-run';
 }
 # Pass options along to rsync
-if ($opt{'verbose'} > 2) {
+if ($opt{'verbose'} > 1) {
   push @rsync, '--verbose';
 }
 # }}}
@@ -173,7 +178,7 @@ for my $full_role (@ARGV) {
   check_cache();
   while (defined (my $part = shift @role_parts)) {
     push @role, $part;
-    ($opt{verbose} > 1) and print STDERR "$PROG: Calling sync_role for @role\n";
+    ($opt{verbose} > 0) and print STDERR "$PROG: Calling sync_role for @role\n";
     sync_role(@role);
   }
   apply_default_perms_to_role($role[0]);
@@ -186,11 +191,11 @@ sub check_cache () {
   my $cache = $opt{cache} . "/roles";
   if (not $opt{'dry-run'}) {
     if (not -d $cache) {
-      ($opt{verbose} > 1) and print STDERR "$PROG: Creating '$cache'\n";
+      ($opt{verbose} > 0) and print STDERR "$PROG: Creating '$cache'\n";
         eval { mkpath($cache); };
         die "Could not mkpath cache dir '$cache': $@\n" if $@;
     }
-    ($opt{verbose} > 1) and print STDERR "$PROG: Checking perms on '$cache'\n";
+    ($opt{verbose} > 0) and print STDERR "$PROG: Checking perms on '$cache'\n";
     chown(0, 0, $cache)
       or die "Could not chown 0:0 '$cache': $!\n";
     chmod(0700, $cache)
@@ -223,7 +228,7 @@ sub sync_role (@) {
     my $source = $opt{source} . "/roles/" . $src_path . "/";
     my $destination = $opt{cache} . "/roles/" . $dst_path . "/";
     if (not -d $destination) {
-        ($opt{verbose} > 1) and print STDERR "$PROG: Creating '$destination'\n";
+        ($opt{verbose} > 0) and print STDERR "$PROG: Creating '$destination'\n";
         if (not $opt{'dry-run'}) {
           eval { mkpath($destination); };
           die "Could not mkpath cache dir '$destination': $@\n" if $@;
@@ -231,7 +236,7 @@ sub sync_role (@) {
     }
     # All this to run an rsync command
     my @command = (@this_rsync, $source, $destination);
-    ($opt{verbose} > 1) and print STDERR "$PROG: Syncing $src_path with '@command'\n";
+    ($opt{verbose} > 0) and print STDERR "$PROG: Syncing $src_path with '@command'\n";
     my ($rsync_pid);
     if ($rsync_pid = fork) {
       # Parent
@@ -270,7 +275,7 @@ sub sync_role (@) {
 sub apply_default_perms_to_role ($) {
   my ($role) = @_;
   my $destination = $opt{cache} . "/roles/" . $role;
-  ($opt{verbose} > 1) and print STDERR "$PROG: Setting default perms on $destination\n";
+  ($opt{verbose} > 0) and print STDERR "$PROG: Setting default perms on $destination\n";
   if ($> != 0) {
     warn "WARNING[$PROG]: Not superuser; won't be able to chown files\n";
   }

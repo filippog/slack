@@ -68,8 +68,11 @@ Options:
   -n, --dry-run
       Don't write any files to disk -- just report what would have been done.
 
-  -b, --backups  DIR
-      Make backups of existing files and put them in this directory.
+  -b, --backup
+      Make backups of existing files in ROOT that are overwritten
+
+  --backup-dir  DIR
+      Put backups into this directory.
 EOF
 
 # Option defaults
@@ -94,7 +97,7 @@ sub read_config () {
       my ($key, $value) = split(/=/, $_, 2);
       $key =~ tr/A-Z_/a-z-/;
       if (not defined $opt{$key}) {
-        ($opt{verbose} > 2) and print STDERR "$PROG: Setting '$key' to '$value'\n";
+        ($opt{verbose} > 1) and print STDERR "$PROG: Setting '$key' to '$value'\n";
         $opt{$key} = $value;
       }
     } else {
@@ -113,7 +116,8 @@ sub read_config () {
       'verbose|v+',
       'quiet',
       'help|h|?',
-      'backups|b=s',
+      'backup|b',
+      'backup-dir=s',
       'config|C=s',
       'dry-run|n',
       'source|s=s',
@@ -132,16 +136,16 @@ die "Role list not defined!\n\n$usage" unless $opt{'role-list'};
 die "No cache defined!\n\n$usage" unless $opt{cache};
 
 # Prepare for backups
-if ($opt{backups}) {
+if ($opt{backup} and $opt{'backup-dir'}) {
   # Make sure backup directory exists
-  unless (-d $opt{backups}) {
-    $opt{verbose} and print STDERR "$PROG: Creating backup directory '$opt{backups}'\n";
+  unless (-d $opt{'backup-dir'}) {
+    ($opt{verbose} > 0) and print STDERR "Creating backup directory '$opt{'backup-dir'}'\n";
     if (not $opt{'dry-run'}) {
-      mkpath($opt{backups})
-        or die "Could not mkpath backup dir '$opt{backups}': $!\n";
+      eval { mkpath($opt{'backup-dir'}); };
+      die "Could not mkpath backup dir '$opt{'backup-dir'}': $@\n" if $@;
     }
   }
-  push @rsync, '--backup', "--backup-dir=$opt{backups}";
+  push(@rsync, "--backup", "--backup-dir=$opt{'backup-dir'}");
 }
 # Look at source type, and add options if necessary
 if ($opt{source} =~ m/^[a-zA-Z_@\.-]+::/) {
@@ -154,7 +158,7 @@ if ($opt{'dry-run'}) {
   push @rsync, '--dry-run';
 }
 # Pass options along to rsync
-if ($opt{'verbose'} > 2) {
+if ($opt{'verbose'} > 1) {
   push @rsync, '--verbose';
 }
 # }}}
@@ -167,7 +171,7 @@ if ($opt{'role-list'} =~ m#^[a-zA-Z_@\.-]+:#) {
 # Read in the roles list
 my @roles = ();
 my $host_found = 0;
-($opt{verbose} > 1) and print STDERR "$PROG: Reading '$opt{'role-list'}'\n";
+($opt{verbose} > 0) and print STDERR "$PROG: Reading '$opt{'role-list'}'\n";
 open(ROLES, "<", $opt{'role-list'})
   or die "Could not open '$opt{'role-list'}' for reading: $!\n";
 while(<ROLES>) {
@@ -195,7 +199,7 @@ sub sync_list () {
   }
   # All this to run an rsync command
   my @command = (@rsync, $source, $destination);
-  ($opt{verbose} > 1) and print STDERR "$PROG: Calling '@command'\n";
+  ($opt{verbose} > 0) and print STDERR "$PROG: Calling '@command'\n";
   my ($rsync_pid);
   if ($rsync_pid = fork) {
     # Parent

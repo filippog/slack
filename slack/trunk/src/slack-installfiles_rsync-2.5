@@ -68,8 +68,11 @@ Options:
   -n, --dry-run
       Don't write any files to disk -- just report what would have been done.
 
-  -b, --backups  DIR
-      Make backups of existing files and put them in this directory.
+  -b, --backup
+      Make backups of existing files in ROOT that are overwritten
+
+  --backup-dir  DIR
+      Put backups into this directory.
 EOF
 
 # Option defaults
@@ -94,7 +97,7 @@ sub read_config () {
       my ($key, $value) = split(/=/, $_, 2);
       $key =~ tr/A-Z_/a-z-/;
       if (not defined $opt{$key}) {
-        ($opt{verbose} > 2) and print STDERR "Setting '$key' to '$value'\n";
+        ($opt{verbose} > 1) and print STDERR "Setting '$key' to '$value'\n";
         $opt{$key} = $value;
       }
     } else {
@@ -113,7 +116,8 @@ sub read_config () {
       'verbose|v+',
       'quiet',
       'help|h|?',
-      'backups|b=s',
+      'backup|b',
+      'backup-dir=s',
       'config|C=s',
       'dry-run|n',
       'source|s=s',
@@ -134,27 +138,30 @@ die "No root defined!\n\n$usage" unless $opt{root};
 die "No cache defined!\n\n$usage" unless $opt{cache};
 
 unless (-d $opt{root}) {
-    mkpath($opt{root})
-          or die "Could not mkpath destination directory '".
-              $opt{root}."': $!\n";
+    if (not $opt{'dry-run'}) {
+      eval { mkpath($opt{root}); };
+      die "Could not mkpath destination directory '$opt{root}': $@\n" if $@;
+    }
     warn "WARNING[$PROG]: Created destination directory '".$opt{root}."'\n";
 }
 
 # Prepare for backups
-if ($opt{b}) {
+if ($opt{backup} and $opt{'backup-dir'}) {
   # Make sure backup directory exists
-  unless (-d $opt{b}) {
-    ($opt{verbose} > 1) and print STDERR "Creating backup directory '$opt{b}'\n";
-    mkpath($opt{b})
-      or die "Could not mkpath backup dir '$opt{b}': $!\n";
+  unless (-d $opt{'backup-dir'}) {
+    ($opt{verbose} > 0) and print STDERR "Creating backup directory '$opt{'backup-dir'}'\n";
+    if (not $opt{'dry-run'}) {
+      eval { mkpath($opt{'backup-dir'}); };
+      die "Could not mkpath backup dir '$opt{'backup-dir'}': $@\n" if $@;
+    }
   }
-  push(@rsync, "--backup", "--backup-dir=$opt{b}");
+  push(@rsync, "--backup", "--backup-dir=$opt{'backup-dir'}");
 }
 # Pass options along to rsync
 if ($opt{'dry-run'}) {
   push @rsync, '--dry-run';
 }
-if ($opt{verbose} > 1) {
+if ($opt{'verbose'} > 1) {
   push @rsync, '--verbose';
 }
 
@@ -176,7 +183,7 @@ exit 0;
 sub save_dir_perms ($) {
   my ($role) = @_;
   my ($tarfile) = $opt{cache} . "/roles/" . $role . "/dirs.tar";
-  ($opt{verbose} > 1) and print STDERR "Saving directories to $tarfile before rsync\n";
+  ($opt{verbose} > 0) and print STDERR "Saving directories to $tarfile before rsync\n";
   # First, we need to build a list of directories in the files directory
   # since they are the ones that may end up overwriting the local directories
   my $source = $opt{cache} . "/roles/" . $role . "/files";
@@ -197,7 +204,7 @@ sub save_dir_perms ($) {
   # Next, we tar up all those directories if they exist under /
   # as a cheap way to save the permissions
   my (@command) = qw(tar --create --no-recursion --files-from=-);
-  ($opt{verbose} > 1) and push(@command, "--verbose");
+  ($opt{verbose} > 0) and push(@command, "--verbose");
   my ($tarpid, $tarfh);
   if ($tarpid = open($tarfh, '|-')) {
     # Parent
@@ -246,7 +253,7 @@ sub save_dir_perms ($) {
 sub restore_dir_perms ($) {
   my ($role) = @_;
   my ($tarfile) = $opt{cache} . "/roles/" . $role . "/dirs.tar";
-  ($opt{verbose} > 1) and print STDERR "Restoring directories from $tarfile after rsync\n";
+  ($opt{verbose} > 0) and print STDERR "Restoring directories from $tarfile after rsync\n";
   # Untar the directories from our tar file
   my (@command) = (
     'tar',
@@ -256,7 +263,7 @@ sub restore_dir_perms ($) {
     "--file=$tarfile",
   );
 
-  ($opt{verbose} > 1) and push(@command, "--verbose");
+  ($opt{verbose} > 0) and push(@command, "--verbose");
   unless (system(@command) == 0) {
     if ($!) {
         die "Syserr on system '@command': $!\n";
@@ -280,7 +287,7 @@ sub install_files ($) {
   my $destination = $opt{root} . "/";
   # All this to run an rsync command
   my @command = (@rsync, $source, $destination);
-  ($opt{verbose} > 1) and print STDERR "$PROG: Calling '@command'\n";
+  ($opt{verbose} > 0) and print STDERR "$PROG: Calling '@command'\n";
   my ($rsync_pid);
   if ($rsync_pid = fork) {
     # Parent

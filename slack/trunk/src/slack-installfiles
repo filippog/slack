@@ -72,8 +72,11 @@ Options:
   -n, --dry-run
       Don't write any files to disk -- just report what would have been done.
 
-  -b, --backups  DIR
-      Make backups of existing files and put them in this directory.
+  -b, --backup
+      Make backups of existing files in ROOT that are overwritten
+
+  --backup-dir  DIR
+      Put backups into this directory.
 EOF
 
 # Option defaults
@@ -98,7 +101,7 @@ sub read_config () {
       my ($key, $value) = split(/=/, $_, 2);
       $key =~ tr/A-Z_/a-z-/;
       if (not defined $opt{$key}) {
-        ($opt{verbose} > 2) and print STDERR "$PROG: Setting '$key' to '$value'\n";
+        ($opt{verbose} > 1) and print STDERR "$PROG: Setting '$key' to '$value'\n";
         $opt{$key} = $value;
       }
     } else {
@@ -117,7 +120,8 @@ sub read_config () {
       'verbose|v+',
       'quiet',
       'help|h|?',
-      'backups|b=s',
+      'backup|b',
+      'backup-dir=s',
       'config|C=s',
       'dry-run|n',
       'source|s=s',
@@ -138,27 +142,30 @@ die "No root defined!\n\n$usage" unless $opt{root};
 die "No cache defined!\n\n$usage" unless $opt{cache};
 
 unless (-d $opt{root}) {
-    mkpath($opt{root})
-          or die "Could not mkpath destination directory '".
-              $opt{root}."': $!\n";
+    if (not $opt{'dry-run'}) {
+      eval { mkpath($opt{root}); };
+      die "Could not mkpath destination directory '$opt{root}': $@\n" if $@;
+    }
     warn "WARNING[$PROG]: Created destination directory '".$opt{root}."'\n";
 }
 
 # Prepare for backups
-if ($opt{b}) {
+if ($opt{backup} and $opt{'backup-dir'}) {
   # Make sure backup directory exists
-  unless (-d $opt{b}) {
-    $opt{verbose} and print STDERR "$PROG: Creating backup directory '$opt{b}'\n";
-    mkpath($opt{b})
-      or die "Could not mkpath backup dir '$opt{b}': $!\n";
+  unless (-d $opt{'backup-dir'}) {
+    ($opt{verbose} > 0) and print STDERR "Creating backup directory '$opt{'backup-dir'}'\n";
+    if (not $opt{'dry-run'}) {
+      eval { mkpath($opt{'backup-dir'}); };
+      die "Could not mkpath backup dir '$opt{'backup-dir'}': $@\n" if $@;
+    }
   }
-  push(@rsync, "--backup", "--backup-dir=$opt{b}");
+  push(@rsync, "--backup", "--backup-dir=$opt{'backup-dir'}");
 }
 # Pass options along to rsync
 if ($opt{'dry-run'}) {
   push @rsync, '--dry-run';
 }
-if ($opt{verbose} > 1) {
+if ($opt{'verbose'} > 1) {
   push @rsync, '--verbose';
 }
 
@@ -176,7 +183,7 @@ sub install_files ($) {
   # final / is important for rsync
   my $source = $opt{cache} . "/roles/" . $role . "/files/";
   my $destination = $opt{root} . "/";
-  ($opt{verbose} > 1) and print STDERR "$PROG: Syncing '$source' to '$destination'\n";
+  ($opt{verbose} > 0) and print STDERR "$PROG: Syncing '$source' to '$destination'\n";
   my @command = (@rsync, $source, $destination);
   my ($rsync_pid, $rsync_fh);
 

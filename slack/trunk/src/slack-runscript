@@ -89,7 +89,7 @@ sub read_config () {
       my ($key, $value) = split(/=/, $_, 2);
       $key =~ tr/A-Z_/a-z-/;
       if (not defined $opt{$key}) {
-        ($opt{verbose} > 2) and print STDERR "$PROG: Setting '$key' to '$value'\n";
+        ($opt{verbose} > 1) and print STDERR "$PROG: Setting '$key' to '$value'\n";
         $opt{$key} = $value;
       }
     } else {
@@ -147,7 +147,7 @@ for my $full_role (@ARGV) {
     $dir = "$opt{cache}/roles/$base_role/scripts";
   }
   my @command = ($script_to_run, $full_role);
-  ($opt{verbose} > 1) and print STDERR "$PROG: Calling '@command' in '$dir'\n";
+  ($opt{verbose} > 0) and print STDERR "$PROG: Calling '@command' in '$dir'\n";
   if (not $opt{'dry-run'}) {
     chdir($dir)
       or die "Could not chdir '$dir': $!\n";
