@@ -1,0 +1,45 @@
+#!/bin/sh -e
+# $Header$
+SLACK_HOME=/var/lib/slack-master
+
+action="$1"                     
+oldversion="$2"
+umask 022
+
+if ! getent group slack > /dev/null ; then
+    echo Adding system group: slack.
+    addgroup --system slack
+fi
+
+if ! getent passwd slack > /dev/null ; then
+    echo Adding system user: slack.
+    adduser --system --ingroup slack \
+        --home "${SLACK_HOME}" \
+        --gecos "Slack User" \
+        --no-create-home \
+        --shell /usr/lib/slack-master/slack-rsyncd \
+        --disabled-password \
+        slack
+fi
+
+if [ ! -d "${SLACK_HOME}" ] ; then
+    echo "Creating ${SLACK_HOME}"
+    mkdir -p "${SLACK_HOME}"
+    chown root:slack "${SLACK_HOME}"
+    chmod 0750 "${SLACK_HOME}"
+fi
+
+if [ ! -e "${SLACK_HOME}/cvsroot" ] ; then
+    echo "Please link ${SLACK_HOME}/cvsroot to your CVS repository"
+fi
+
+if [ ! -e "${SLACK_HOME}/source" ] ; then
+    mkdir -p "${SLACK_HOME}/source"
+    chown slack: "${SLACK_HOME}/source"
+    echo "Please run /usr/lib/slack-master/slack-update-source"
+fi
+
+if [ ! -f "${SLACK_HOME}/.ssh/authorized_keys" ] ; then
+    echo "Please set up ~slack/.ssh/authorized_keys"
+    echo "  (see /usr/share/doc/slack-master/authorized_keys.example)"
+fi

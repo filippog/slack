@@ -7,7 +7,17 @@ set -e
 if [ "$1" = "purge" ]; then
         # purge the source cache as well
         echo "Purging local source cache"
-        rm -rf /var/lib/slack-master/source
+        rm -r /var/lib/slack-master/source
+
+        if getent passwd gdm >/dev/null; then
+            echo "Removing user slack"
+            deluser slack
+        fi
+        if getent group gdm >/dev/null; then
+            echo "Removing group slack"
+            delgroup slack
+        fi
+
 fi
 
 exit 0
