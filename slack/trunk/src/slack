@@ -268,18 +268,21 @@ for my $role (@roles) {
   $opt{verbose} and print STDERR "$PROG: stage $role\n";
   run_command(LIBEXEC_DIR.'/slack-stage',
     @{$backend_flags{stage}}, $role);
-  # fixfiles
-  $opt{verbose} and print STDERR "$PROG: fixfiles $role\n";
-  run_command(LIBEXEC_DIR.'/slack-runscript',
-    @{$backend_flags{fixfiles}}, 'fixfiles', $role);
+
   # preinstall
   $opt{verbose} and print STDERR "$PROG: preinstall $role\n";
   run_command(LIBEXEC_DIR.'/slack-runscript',
     @{$backend_flags{preinstall}}, 'preinstall', $role);
+
+  # fixfiles
+  $opt{verbose} and print STDERR "$PROG: fixfiles $role\n";
+  run_command(LIBEXEC_DIR.'/slack-runscript',
+    @{$backend_flags{fixfiles}}, 'fixfiles', $role);
   # installfiles
   $opt{verbose} and print STDERR "$PROG: install $role\n";
   run_command(LIBEXEC_DIR.'/slack-installfiles',
     @{$backend_flags{install}}, $role);
+
   # postinstall
   $opt{verbose} and print STDERR "$PROG: postinstall $role\n";
   run_command(LIBEXEC_DIR.'/slack-runscript',

@@ -1,3 +1,10 @@
+slack (0.12-1) stable; urgency=low
+
+  * New upstream source (see ChangeLog).
+        swap preinstall and fixfiles in order of operations
+
+ -- Alan Sundell <alan@sundell.net>  Thu, 03 Dec 2004 10:30:00 -0800
+
 slack (0.11-1) stable; urgency=low
 
   * New upstream source (see ChangeLog).
