@@ -1,6 +1,7 @@
 slack is a configuration management system designed to appeal to lazy admins
 (like me).  It's an evolution from the usual "put files in some central
-directory" that is faily common practice.
+directory" that is faily common practice.  It's descended from an earlier
+system I also wrote, called "subsets".
 
 -----
 
