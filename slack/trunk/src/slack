@@ -14,8 +14,7 @@ use File::Path;
 use File::Find;
 
 use constant DEFAULT_CONFIG_FILE => '/etc/slack.conf';
-#use constant LIBEXEC_DIR => '/usr/lib/slack';
-use constant LIBEXEC_DIR => '/nfs/stor/src/alan/slack/package/src';
+use constant LIBEXEC_DIR => '/usr/lib/slack';
 
 (my $PROG = $0) =~ s#.*/##;
 
