@@ -1,10 +1,28 @@
 # $Id$
 PRE-1.0:
-* abstract out common code somehow
+* Figure out some better way to handle backup options:
+    - by default, we want admins to just specify the base backup dir in config,
+      and we can add the time-based subdir to it
+    - we generally want only installfiles to do backups (given the existence
+        of fixfiles, it's pretty useless for slack-sync)
+    - maybe readconfig() should take a list of config vars to read?
+    - if we're doing backups in slack-sync, we need to append
+        files(.subrole)?|scripts
+    - rsync really hates whatever fixfiles does with symlinks in accounts.
+        it's probably a bug.  track it down.
+    
+* Nagging
+    - we want to be able to nag admins about files they have not yet installed
+
+* abstract out common code somehow:
+    - maybe a module (util.pm?)
+    - especially:
+        + readconfig
+        + generic option parsing
+        + some sort of rsync wrapper
+
 * separate slack-runscript, slack-runfixfiles
 * allow ./configure to set paths
-* install private key and ssh config when installing (or maybe leave to a role)
-* backup directories
 * manpages for slack, slack-backends
 --------
 LATER:
@@ -21,3 +39,4 @@ LATER:
 * Make a helper that uses tripwire or AIDE to find files that
   have been modified and upload them to repository, so people
   can be *really* lazy.
+* Locking to prevent concurrent writes

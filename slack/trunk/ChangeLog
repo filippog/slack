@@ -1,12 +1,33 @@
+2004-06-03  Alan Sundell  <alan@sundell.net>
+
+	* Version 0.4
+	* Changes to the way backups are handled
+	    * slack: choose a backup directory based on date
+	    * slack-sync,slack-getroles,slack-installfiles: use a --backup
+		and a --backup-dir option, like rsync
+	    * slack.conf: set BACKUP_DIR
+	    The current scheme is a little fragile and will probably change.
+
+	* Changes to verbosity:
+	    * slack: chop off one level of verbosity to modules
+	    * [modules]: bump verbosity thresholds down one
+
+	* slack-sync: transfer files with --perms, so when people make old
+            files (non-)executable in the repository, the change will 
+            propagate.
+
+	* slack-installfiles: mkdir $opt{root} in an eval
+
+
 2004-05-31  Alan Sundell  <alan@sundell.net>
 
 	* Version 0.3
 	* [all]: use sigtrap
 	* [modules]: be silent with just one -v
-                     redirect rsync's STDOUT to STDERR
+		     redirect rsync's STDOUT to STDERR
 	* slack: propagate verbosity down to modules
-                 make level-1 verbosity less noisy, easier to read
-                 fix error-checking after system()
+		 make level-1 verbosity less noisy, easier to read
+		 fix error-checking after system()
 	* slack-sync: check perms on $opt{cache}/roles (root:root 0700)
 
 2004-05-23  Alan Sundell  <alan@sundell.net>
