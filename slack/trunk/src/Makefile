@@ -6,7 +6,7 @@ BACKENDS = slack-getroles slack-installfiles slack-runscript slack-sync slack-st
 
 all:
 
-install: install-bin install-conf install-lib
+install: install-bin install-conf install-lib install-man
 
 install-bin: all
 	$(MKDIR) $(DESTDIR)$(sbindir)
@@ -26,8 +26,12 @@ install-lib: all
 	$(MKDIR) $(DESTDIR)$(slack_libdir)
 	$(INSTALL) -m 0644 Slack.pm $(DESTDIR)$(slack_libdir)
 
+install-man: all
+
 clean:
 
 realclean: clean
 
 distclean: clean
+
+test:

@@ -3,8 +3,10 @@
 
 include	Makefile.common
 
-TARGETS = all install install-bin install-conf clean distclean realclean
-SUBDIRS = doc src
+TARGETS = all test \
+    install install-bin install-conf install-lib install-man \
+    clean distclean realclean
+SUBDIRS = doc src test
 
 distdir = $(PACKAGE)-$(VERSION)
 
@@ -31,3 +33,5 @@ dist: distclean
 	gzip -9f ../$(distdir).tar
 	chmod a+r ../$(distdir).tar.gz
 	@ls -l ../$(distdir).tar.gz
+
+check: test

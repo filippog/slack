@@ -4,6 +4,9 @@
 	    beginning with './' (important for testing)
 	* Slack.pm: get_options(): generate default usage if no usage given
 		    get_options(): don't pass back the --quiet handler
+	* added support for "make test"
+	* test: added Slack.pm tests
+	* [Makefiles]: support a common set of install-* targets
 
 2004-12-22  Alan Sundell  <alan@sundell.net>
 	* Version 0.13

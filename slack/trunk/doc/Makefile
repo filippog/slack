@@ -12,8 +12,12 @@ install-man: all
 	$(MKDIR) $(DESTDIR)$(mandir)/man8
 	$(INSTALL) slack.8 $(DESTDIR)$(mandir)/man8
 
+install-bin install-conf install-lib: all
+
 clean:
 
 realclean: clean
 
 distclean: clean
+
+test:
