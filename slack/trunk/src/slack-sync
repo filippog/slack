@@ -24,6 +24,8 @@ my @rsync = ('rsync',
               '--times',
               '--perms',
               '--sparse',
+              '--files-from=-',
+              '--from0',
               );
 
 (my $PROG = $0) =~ s#.*/##;
@@ -196,8 +198,12 @@ sub check_cache () {
         die "Could not mkpath cache dir '$cache': $@\n" if $@;
     }
     ($opt{verbose} > 0) and print STDERR "$PROG: Checking perms on '$cache'\n";
-    chown(0, 0, $cache)
-      or die "Could not chown 0:0 '$cache': $!\n";
+    if ($> != 0) {
+      warn "WARNING[$PROG]: Not superuser; unable to chown files\n";
+    } else {
+      chown(0, 0, $cache)
+        or die "Could not chown 0:0 '$cache': $!\n";
+    }
     chmod(0700, $cache)
       or die "Could not chmod 0700 '$cache': $!\n";
   }
@@ -208,6 +214,7 @@ sub sync_role (@) {
   my @role = @_;
   my @subdirs;
   my @this_rsync = @rsync;
+  my ($source, $destination);
   # For the base role, do both files and scripts, and delete any files
   # that don't exist in the repository.  For all subroles, just do the
   # files, and don't delete (otherwise we'll delete all files not in
@@ -215,59 +222,70 @@ sub sync_role (@) {
   if (scalar @role == 1) {
     @subdirs = qw(files scripts);
     push @this_rsync, "--delete";
+    # $role[$[] is the base role name
+    $source = $opt{source} . "/roles/" . $role[$[] . "/";
+    $destination = $opt{cache} . "/roles/" . $role[$[] . "/";
   } else {
-    @subdirs = qw(files);
+    # for subroles, we're stuffing the stuff in files.foo.bar/ into files/
+    push @this_rsync, "--no-relative";
+    # It'd be nice if we could just do all subroles here, one after
+    # another, but apparently rsync ignores the second appearance of a
+    # file, so files in subsubroles would no longer override files by
+    # the same name in subroles if we did that.
+    @subdirs = (join(".", "files", @role[($[+1)..$#role])."/");
+    $source = $opt{source} . "/roles/" . $role[$[] . "/";
+    $destination = $opt{cache} . "/roles/" . $role[$[] . "/files/";
   }
-  for my $subdir (@subdirs) {
-    # (a)     => a/files 
-    # (a,b,c) => a/files.b.c
-    my $src_path = $role[$[].'/'.join(".", $subdir, @role[($[+1)..$#role]);
-    my $dst_path = $role[$[].'/'.$subdir;
 
-    # final / is important for rsync
-    my $source = $opt{source} . "/roles/" . $src_path . "/";
-    my $destination = $opt{cache} . "/roles/" . $dst_path . "/";
-    if (not -d $destination) {
-        ($opt{verbose} > 0) and print STDERR "$PROG: Creating '$destination'\n";
-        if (not $opt{'dry-run'}) {
-          eval { mkpath($destination); };
-          die "Could not mkpath cache dir '$destination': $@\n" if $@;
-        }
-    }
-    # All this to run an rsync command
-    my @command = (@this_rsync, $source, $destination);
-    ($opt{verbose} > 0) and print STDERR "$PROG: Syncing $src_path with '@command'\n";
-    my ($rsync_pid);
-    if ($rsync_pid = fork) {
-      # Parent
-    } elsif (defined $rsync_pid) {
-      # Child
-      open(STDIN, "<", "/dev/null")
-        or die "Could not redirect STDIN from /dev/null\n";
-      # This redirection is necessary because rsync sends
-      #   verbose output to STDOUT
-      open(STDOUT, ">&STDERR")
-        or die "Could not redirect STDOUT to STDERR\n";
-      exec(@command);
-      die "Could not exec '@command': $!\n";
+  my @command = (@this_rsync, $source, $destination);
+  ($opt{verbose} > 0) and print STDERR "$PROG: Syncing ".join(", ",@subdirs)." from $source with '@command'\n";
+  my ($rsync_pid, $rsync_fh);
+
+  if (not -d $destination) {
+    if (not $opt{'dry-run'}) {
+      ($opt{verbose} > 0) and print STDERR "$PROG: Creating '$destination'\n";
+      eval { mkpath($destination); };
+      die "Could not mkpath cache dir '$destination': $@\n" if $@;
     } else {
-      die "Could not fork: $!\n";
+      warn "WARNING[$PROG]: '$destination' does not exist and we can't create it when doing dry run.  rsync will fail.\n";
     }
-    my $kid = waitpid($rsync_pid, 0);
-    if ($kid != $rsync_pid) {
-      die "waitpid returned $kid\n";
-    } elsif ($?) {
-      if ($? & 128) {
-          die "'@command' dumped core\n";
-      }
-      if (my $sig = $? & 127) {
-          die "'@command' caught sig $sig\n";
-      }
-      if (my $exit = $? >> 8) {
-          die "'@command' returned $exit\n";
-      }
-      die "Unknown error on '@command'\n";
+  }
+
+  # Divide into parent (which will make a list of files to install)
+  # and child (which will exec rsync)
+  if ($rsync_pid = open($rsync_fh, "|-")) {
+    # Parent
+  } elsif (defined $rsync_pid) {
+    # Child
+    # This redirection is necessary because rsync sends
+    #   verbose output to STDOUT
+    open(STDOUT, ">&STDERR")
+      or die "Could not redirect STDOUT to STDERR\n";
+    exec(@command);
+    die "Could not exec '@command': $!\n";
+  } else {
+    die "Could not fork: $!\n";
+  }
+
+  # send the list of directories to rsync (delimited by nulls
+  # since we gave --from0 in options)
+  print $rsync_fh join("\0", (@subdirs, ""));
+
+  # Check return value
+  unless (close($rsync_fh)) {
+    if ($!) {
+        die "Syserr on system '@command': $!\n";
     }
+    if ($? & 128) {
+        die "'@command' dumped core\n";
+    }
+    if (my $sig = $? & 127) {
+        die "'@command' caught sig $sig\n";
+    }
+    if (my $exit = $? >> 8) {
+        die "'@command' returned $exit\n";
+    }
+    die "Unknown error on '@command'\n";
   }
 }
 
@@ -285,7 +303,8 @@ sub apply_default_perms_to_role ($) {
       wanted => sub {
         return if $opt{'dry-run'};
         if (-l) {
-          # TODO maybe should lchown symlinks
+          # symlinks shouldn't be in here,
+          #     since we dereference when copying
           warn "WARNING[$PROG]: Skipping symlink at $File::Find::name: $!\n";
           return;
         } elsif (-f _) { # results of last stat saved in the "_"
