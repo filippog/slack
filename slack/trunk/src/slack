@@ -228,7 +228,7 @@ sub run_backend (@) {
   my (@command) = ($backend, @args);
   ($opt{verbose} > 2) and print STDERR "$PROG: Calling '@command'\n";
   unless (system(@command) == 0) {
-    check_system_exit(@command);
+    Slack::check_system_exit(@command);
   }
 }
 
