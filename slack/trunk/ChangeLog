@@ -1,3 +1,9 @@
+2004-10-29  Alan Sundell  <alan@sundell.net>
+
+	* Version 0.10.1
+	* slack-stage: don't need --cvs-exclude
+	* [all]: get rid of $[ -- it just confuses people
+
 2004-10-22  Alan Sundell  <alan@sundell.net>
 
 	* Version 0.10

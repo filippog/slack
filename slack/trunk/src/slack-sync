@@ -30,7 +30,7 @@ my @rsync = ('rsync',
 (my $PROG = $0) =~ s#.*/##;
 
 sub check_cache ();
-sub sync_role (@);
+sub sync_role ($);
 sub apply_default_perms_to_role ($);
 
 ########################################
@@ -179,7 +179,7 @@ check_cache();
 for my $full_role (@ARGV) {
   # Get the first element of the role name (the base role)
   # e.g., from "google.foogle.woogle", get "google"
-  my $base_role = (split /\./, $full_role, 2)[$[];
+  my $base_role = (split /\./, $full_role, 2)[0];
   ($opt{verbose} > 0) and print STDERR "$PROG: Calling sync_role for $base_role\n";
   sync_role($base_role);
 }
@@ -208,12 +208,12 @@ sub check_cache () {
 }
 
 # Copy the files for a role from SOURCE to CACHE
-sub sync_role (@) {
+sub sync_role ($) {
+  # $role is the base role name
   my ($role) = @_;
   my @subdirs;
   my ($source, $destination);
 
-  # $role[$[] is the base role name (the first element in the array)
   # Pull down the whole tree locally
   $source = $opt{source} . "/roles/" . $role . "/";
   $destination = $opt{cache} . "/roles/" . $role . "/";

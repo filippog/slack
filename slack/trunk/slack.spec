@@ -1,6 +1,6 @@
 Summary: slack configuration management tool
 Name: slack
-Version: 0.10
+Version: 0.10.1
 Release: 1
 License: GPL
 Group: System Environment/Libraries
@@ -48,6 +48,10 @@ if [ $1 = 0 ] ; then
 fi
 
 %changelog
+* Fri Oct 29 2004 Alan Sundell <alan@sundell.net> 0.10.1-1
+- new upstram source (see ChangeLog)
+    minor code cleanups
+
 * Fri Oct 22 2004 Alan Sundell <alan@sundell.net> 0.10-1
 - new upstram source (see ChangeLog)
     adds a new "staging" step, which elimates the need for .keepme~ files

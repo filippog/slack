@@ -1,3 +1,10 @@
+slack (0.10.1-1) stable; urgency=low
+
+  * New upstream source (see ChangeLog).
+        minor code cleanups
+
+ -- Alan Sundell <alan@sundell.net>  Fri, 29 Oct 2004 16:00:00 -0700
+
 slack (0.10-1) stable; urgency=low
 
   * New upstream source (see ChangeLog).

@@ -19,7 +19,6 @@ use File::Find;
 use constant DEFAULT_CONFIG_FILE => '/etc/slack.conf';
 
 my @rsync = ('rsync',
-              '--cvs-exclude',
               '--recursive',
               '--times',
               '--perms',
@@ -226,8 +225,8 @@ sub sync_role (@) {
   for my $subdir (@subdirs) {
     # (a)     => a/files 
     # (a,b,c) => a/files.b.c
-    my $src_path = $role[$[].'/'.join(".", $subdir, @role[($[+1)..$#role]);
-    my $dst_path = $role[$[].'/'.$subdir;
+    my $src_path = $role[0].'/'.join(".", $subdir, @role[1 .. $#role]);
+    my $dst_path = $role[0].'/'.$subdir;
 
     # final / is important for rsync
     my $source = $opt{cache} . "/roles/" . $src_path . "/";
