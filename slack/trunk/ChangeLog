@@ -1,3 +1,11 @@
 2004-05-23  Alan Sundell  <alan@sundell.net>
 
+	* Version (0.2)
+	* slack,slack-runscript: Renamed "fixperms" to "fixfiles".
+	* slack-sync: Fixed bug that would make installing a subrole
+		      install files from the subrole only, not its parent.
+	* slack.conf: Changed default master to rsyncd-over-ssh.
+
+2004-05-23  Alan Sundell  <alan@sundell.net>
+
 	* Initial Version (0.1)

@@ -1,8 +1,20 @@
 # $Id$
+* make level-1 verbosity less noisy, easier to read
+* propagate verbosity levels down to modules
+
+* install private key and ssh config when installing (or maybe leave to a role)
+
+* record what roles have been installed
+* allow username in urls
+* backup directories
+
 * manpages for slack, slack-backends
 
 * build in support for heterogenous underlying distros, like subsets have
+  (maybe just assing subroles)
 
+* Allow easy review of changes before install
+* Nagging email about pending changes
 * Use backup functionality to store original versions of files,
   so we can uninstall
 * Use backups to store intermediate versions of files for rollbacks

@@ -1,3 +1,9 @@
+slack (0.2-1) stable; urgency=low
+
+  * New upstream source.
+
+ -- Alan Sundell <alan@sundell.net>  Wed, 26 May 2004 22:35:00 -0700
+
 slack (0.1-1) stable; urgency=low
 
   * Initial Version.
