@@ -1,4 +1,5 @@
 #!/usr/bin/perl -w
+# $Id$
 # vim:sw=2
 # vim600:fdm=marker
 # This script is in charge of copying files from the local stage to the root
@@ -13,7 +14,9 @@ use sigtrap qw(die untrapped normal-signals
 use File::Path;
 use File::Find;
 
-use constant DEFAULT_CONFIG_FILE => '/etc/slack.conf';
+use constant LIB_DIR => '/usr/lib/slack';
+use lib LIB_DIR;
+use Slack;
 
 my @rsync = ('rsync',
              '--relative',
@@ -47,103 +50,18 @@ select((select(STDERR), $|=1)[0]);
 
 ########################################
 # Config and option parsing {{{
-my $usage = <<EOF;
-Usage: $PROG [options] <role> [<role>...]
-
-Options:
-  -h, -?, --help
-      Print this help message and exit.
-
-  -v, --verbose
-      Be verbose
-
-  -C, --config  FILE
-      Use this config file instead of /etc/slack.conf
-
-  -s, --source  DIR
-      Source for slack files
-
-  -c, --cache  DIR
-      Local cache directory for slack files
-
-  -t, --stage  DIR
-      Local staging directory for slack files
-
-  -r, --root  DIR
-      Root destination for slack files
-
-  -n, --dry-run
-      Don't write any files to disk -- just report what would have been done.
-
-  -b, --backup
-      Make backups of existing files in ROOT that are overwritten
-
-  --backup-dir  DIR
-      Put backups into this directory.
-EOF
-
+my $usage = Slack::default_usage("$PROG [options] <role> [<role>...]");
 # Option defaults
-my %opt = (
-  config => DEFAULT_CONFIG_FILE,
-  verbose => 0,
+my %opt = ();
+Slack::get_options(
+  opthash => \%opt,
+  usage => $usage,
+  required_options => [ qw(root stage) ],
 );
-# A special option to shut off verbose
-$opt{quiet} = sub { $opt{verbose} = 0; };
-
-# Reads through the config file
-sub read_config () {
-  my $config = $opt{config};
-  open(CONFIG, "<", $config)
-    or die "Could not open config file: $!";
-  while(<CONFIG>) {
-    chomp;
-    s/#.*//; # delete comments
-    s/\s+$//; # delete trailing spaces
-    next if m/^$/; # skip empty lines
-    if (m/^[A-Z_]+=\S+/) {
-      my ($key, $value) = split(/=/, $_, 2);
-      $key =~ tr/A-Z_/a-z-/;
-      if (not defined $opt{$key}) {
-        ($opt{verbose} > 1) and print STDERR "$PROG: Setting '$key' to '$value'\n";
-        $opt{$key} = $value;
-      }
-    } else {
-      warn "WARNING[$PROG]: Garbage line '$_' in '$config' line $.\n";
-    }
-  }
-  close(CONFIG)
-    or die "Could not close config file: $!";
-}
-
-# Collect options
-{
-    use Getopt::Long;
-    Getopt::Long::Configure ("bundling");
-    GetOptions(\%opt,
-      'verbose|v+',
-      'quiet',
-      'help|h|?',
-      'backup|b',
-      'backup-dir=s',
-      'config|C=s',
-      'dry-run|n',
-      'source|s=s',
-      'cache|c=s',
-      'stage|t=s',
-      'root|r=s',
-      ) or die $usage;
-    if ($opt{help}) {
-        print $usage;
-        exit 0;
-    }
-    read_config;
-}
 # }}}
 
 # Arguments are required
 die "No roles given!\n\n$usage" unless @ARGV;
-die "No root defined!\n\n$usage" unless $opt{root};
-die "No stage defined!\n\n$usage" unless $opt{stage};
 
 unless (-d $opt{root}) {
     if (not $opt{'dry-run'}) {
@@ -256,19 +174,7 @@ sub install_files ($) {
 
   # Check return value
   unless (close($rsync_fh)) {
-    if ($!) {
-        die "Syserr on system '@command': $!\n";
-    }
-    if ($? & 128) {
-        die "'@command' dumped core\n";
-    }
-    if (my $sig = $? & 127) {
-        die "'@command' caught sig $sig\n";
-    }
-    if (my $exit = $? >> 8) {
-        die "'@command' returned $exit\n";
-    }
-    die "Unknown error on '@command'\n";
+    Slack::check_system_exit(@command);
   }
 }
 

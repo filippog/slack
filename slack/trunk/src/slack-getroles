@@ -15,7 +15,9 @@ use sigtrap qw(die untrapped normal-signals
 use File::Path;
 use Sys::Hostname;
 
-use constant DEFAULT_CONFIG_FILE => '/etc/slack.conf';
+use constant LIB_DIR => '/usr/lib/slack';
+use lib LIB_DIR;
+use Slack;
 
 my @rsync = ('rsync',
               '--links',
@@ -43,105 +45,23 @@ select((select(STDERR), $|=1)[0]);
 
 ########################################
 # Config and option parsing {{{
-my $usage = <<EOF;
-Usage: $PROG [options] <role> [<role>...]
-
-Options:
-  -h, -?, --help
-      Print this help message and exit.
-
-  -v, --verbose
-      Be verbose
-
-  -C, --config  FILE
-      Use this config file instead of /etc/slack.conf
+my $usage = Slack::default_usage("$PROG [options]");
+$usage .= <<EOF;
 
   --role-list
       Role list location (can be relative to SOURCE)
-
-  -s, --source  DIR
-      Source for slack files
-
-  -c, --cache  DIR
-      Local cache directory for slack files
-
-  -t, --stage  DIR
-      Local staging directory for slack files [ignored]
-
-  -r, --root  DIR
-      Root destination for slack files [ignored]
-
-  -n, --dry-run
-      Don't write any files to disk -- just report what would have been done.
-
-  -b, --backup
-      Make backups of existing files in ROOT that are overwritten
-
-  --backup-dir  DIR
-      Put backups into this directory.
 EOF
 
 # Option defaults
-my %opt = (
-  config => DEFAULT_CONFIG_FILE,
-  verbose => 0,
+my %opt = ();
+Slack::get_options(
+  opthash => \%opt,
+  command_line_options => [
+    'role-list=s',
+  ],
+  required_options => [ qw(role-list) ],
+  usage => $usage,
 );
-# A special option to shut off verbose
-$opt{quiet} = sub { $opt{verbose} = 0; };
-
-# Reads through the config file
-sub read_config () {
-  my $config = $opt{config};
-  open(CONFIG, "<", $config)
-    or die "Could not open config file '$config': $!";
-  while(<CONFIG>) {
-    chomp;
-    s/#.*//; # delete comments
-    s/\s+$//; # delete trailing spaces
-    next if m/^$/; # skip empty lines
-    if (m/^[A-Z_]+=\S+/) {
-      my ($key, $value) = split(/=/, $_, 2);
-      $key =~ tr/A-Z_/a-z-/;
-      if (not defined $opt{$key}) {
-        ($opt{verbose} > 1) and print STDERR "$PROG: Setting '$key' to '$value'\n";
-        $opt{$key} = $value;
-      }
-    } else {
-      warn "WARNING[$PROG]: Garbage line '$_' in '$config' line $.\n";
-    }
-  }
-  close(CONFIG)
-    or die "Could not close config file: $!";
-}
-
-# Collect options
-{
-    use Getopt::Long;
-    Getopt::Long::Configure ("bundling");
-    GetOptions(\%opt,
-      'verbose|v+',
-      'quiet',
-      'help|h|?',
-      'backup|b',
-      'backup-dir=s',
-      'config|C=s',
-      'role-list=s',
-      'dry-run|n',
-      'source|s=s',
-      'cache|c=s',
-      'stage|t=s',
-      'root|r=s',
-      ) or die $usage;
-    if ($opt{help}) {
-        print $usage;
-        exit 0;
-    }
-    read_config;
-}
-
-# Arguments are required
-die "Role list not defined!\n\n$usage" unless $opt{'role-list'};
-die "No cache defined!\n\n$usage" unless $opt{cache};
 
 # Prepare for backups
 if ($opt{backup} and $opt{'backup-dir'}) {
@@ -155,12 +75,6 @@ if ($opt{backup} and $opt{'backup-dir'}) {
   }
   push(@rsync, "--backup", "--backup-dir=$opt{'backup-dir'}");
 }
-# Look at source type, and add options if necessary
-if ($opt{source} =~ m/^[\w@\.-]+::/) {
-  # This is tunnelled rsync, and so needs an extra option
-  push @rsync, '-e', 'ssh';
-}
-
 # Pass options along to rsync
 if ($opt{'dry-run'}) {
   push @rsync, '--dry-run';
@@ -175,11 +89,23 @@ if ($opt{'verbose'} > 1) {
 # if need be.
 unless ($opt{'role-list'} =~ m#^/# or
         $opt{'role-list'} =~ m#^[\w@\.-]+:#) {
+  if (not defined $opt{source}) {
+    die "Relative path to role-list given, but source not defined!\n\n$usage\n";
+  }
   $opt{'role-list'} = $opt{source} . '/' . $opt{'role-list'};
 }
 
 # Copy a non-local list locally
 if ($opt{'role-list'} =~ m#^[\w@\.-]+:#) {
+  # We need a cache directory if the role list is not local
+  if (not defined $opt{cache}) {
+    die "Remote path to role-list given, but cache not defined!\n\n$usage\n";
+  }
+  # Look at source type, and add options if necessary
+  if ($opt{'role-list'} =~ m/^[\w@\.-]+::/) {
+    # This is tunnelled rsync, and so needs an extra option
+    push @rsync, '-e', 'ssh';
+  }
   sync_list();
 }
 
@@ -235,16 +161,7 @@ sub sync_list () {
   if ($kid != $rsync_pid) {
     die "waitpid returned $kid\n";
   } elsif ($?) {
-    if ($? & 128) {
-        die "'@command' dumped core\n";
-    }
-    if (my $sig = $? & 127) {
-        die "'@command' caught sig $sig\n";
-    }
-    if (my $exit = $? >> 8) {
-        die "'@command' returned $exit\n";
-    }
-    die "Unknown error on '@command'\n";
+    check_system_exit(@command);
   }
   $opt{'role-list'} = $destination;
 }

@@ -16,8 +16,10 @@ use File::Path;
 use File::Find;
 use POSIX; # for strftime
 
-use constant DEFAULT_CONFIG_FILE => '/etc/slack.conf';
 use constant LIBEXEC_DIR => '/usr/lib/slack';
+use constant LIB_DIR => '/usr/lib/slack';
+use lib LIB_DIR;
+use Slack qw(run_command);
 
 (my $PROG = $0) =~ s#.*/##;
 
@@ -27,8 +29,6 @@ my %backend_flags = ( map { $_ => [] }
 );
 
 my @roles;
-
-sub run_command (@);
 
 ########################################
 # Environment
@@ -44,123 +44,36 @@ select((select(STDERR), $|=1)[0]);
 
 ########################################
 # Config and option parsing {{{
-my $usage = <<EOF;
-Usage: $PROG [options] [<role>...]
-
-Options:
-  -h, -?, --help
-      Print this help message and exit.
-
-  -v, --verbose
-      Be verbose
-
-  -C, --config  FILE
-      Use this config file instead of /etc/slack.conf
-
-  -s, --source  DIR
-      Source for slack files
-
-  -c, --cache  DIR
-      Local cache directory for slack files
-
-  -t, --stage  DIR
-      Local staging directory for slack files
-
-  -r, --root  DIR
-      Root destination for slack files
+my $usage = Slack::default_usage("$PROG [options] [<role>...]");
+$usage .= <<EOF;
 
   --no-files
       Don't install any files in ROOT, but tell rsync to print what
       it would do.
 
   --no-scripts
-      Don't run scripts
-
-  -n, --dry-run
-      Same as --no-files --no-scripts  (CACHE, STAGE will still be updated)
+      Don't run scripts.
 
   --role-list
       Role list for slack-getroles
 
-  -b, --backup
-      Make backups of existing files in ROOT that are overwritten
-
-  --backup-dir  DIR
-      Put backups into this directory.
 EOF
 
 # Options
-my %opt = (
-  verbose => 0,
-  backup => 1,
-);
-# A special option to shut off verbose
-$opt{quiet} = sub { $opt{verbose} = 0; };
+my %opt = ();
 # So we can distinguish stuff on the command line from config file stuff
 my %command_line_opt = ();
-
-# Reads through the config file
-sub read_config () {
-  my $config = $opt{config};
-  open(CONFIG, "<", $config)
-    or die "Could not open config file '$config': $!";
-  while(<CONFIG>) {
-    chomp;
-    s/#.*//; # delete comments
-    s/\s+$//; # delete trailing spaces
-    next if m/^$/; # skip empty lines
-    if (m/^[A-Z_]+=\S+/) {
-      my ($key, $value) = split(/=/, $_, 2);
-      $key =~ tr/A-Z_/a-z-/;
-      if (not defined $opt{$key}) {
-        ($opt{verbose} > 2) and print STDERR "$PROG: Setting '$key' to '$value'\n";
-        $opt{$key} = $value;
-      }
-    } else {
-      warn "WARNING[$PROG]: Garbage line '$_' in '$config' line $.\n";
-    }
-  }
-  close(CONFIG)
-    or die "Could not close config file: $!";
-}
-
-# Collect options
-{
-    use Getopt::Long;
-    Getopt::Long::Configure ("bundling");
-    GetOptions(\%opt,
-      'verbose|v+',
-      'quiet',
-      'help|h|?',
-      'backup|b',
-      'backup-dir=s',
-      'config|C=s',
-      'role-list=s',
-      'no-scripts',
-      'no-files',
-      'dry-run|n',
-      'source|s=s',
-      'cache|c=s',
-      'stage|t=s',
-      'root|r=s',
-      ) or die $usage;
-    if ($opt{help}) {
-        print $usage;
-        exit 0;
-    }
-    # Remember command line options
-    %command_line_opt = %opt;
-    # Set a default config file
-    if (not defined $opt{config}) {
-      $opt{config} = DEFAULT_CONFIG_FILE;
-    }
-    read_config;
-}
-
-# Some conf variables are required
-die "No source defined!\n\n$usage" unless $opt{source};
-die "No root defined!\n\n$usage" unless $opt{root};
-die "No cache defined!\n\n$usage" unless $opt{cache};
+Slack::get_options(
+  opthash => \%opt,
+  command_line_options => [
+    'role-list=s',
+    'no-scripts|noscripts',
+    'no-files|nofiles',
+  ],
+  required_options => [ qw(source cache stage root) ],
+  command_line_hash => \%command_line_opt,
+  usage => $usage,
+);
 
 # Special options
 if ($opt{'dry-run'}) {
@@ -178,7 +91,8 @@ if ($opt{'no-files'}) {
     '--dry-run';
 }
 # propagate verbosity - 1 to all backends
-if ($command_line_opt{'verbose'} > 1) {
+if (defined $command_line_opt{'verbose'} and
+    $command_line_opt{'verbose'} > 1) {
   for my $action (keys %backend_flags) {
     push @{$backend_flags{$action}},
       ('--verbose') x ($command_line_opt{'verbose'} - 1);
@@ -199,6 +113,11 @@ if ($command_line_opt{'role-list'}) {
     "--role-list=$command_line_opt{'role-list'}";
 }
     
+# The backup option defaults to on if it wasn't specified
+# on the command line or a config file
+if (not defined $opt{backup}) {
+  $opt{backup} = 1;
+}
 # Figure out a place to put backups
 if ($opt{backup} and $opt{'backup-dir'}) {
   push @{$backend_flags{installfiles}},
@@ -228,19 +147,7 @@ if (not @ARGV) {
   }
   @roles = split(/\s+/, join(" ", <$roles_fh>));
   unless (close($roles_fh)) {
-    if ($!) {
-        die "Syserr on system '@command': $!\n";
-    }
-    if ($? & 128) {
-        die "'@command' dumped core\n";
-    }
-    if (my $sig = $? & 127) {
-        die "'@command' caught sig $sig\n";
-    }
-    if (my $exit = $? >> 8) {
-        die "'@command' returned $exit\n";
-    }
-    die "Unknown error on '@command'\n";
+    Slack::check_system_exit(@command);
   }
 } else {
   @roles = @ARGV;
@@ -290,22 +197,3 @@ for my $role (@roles) {
 }
 exit 0;
 
-sub run_command (@) {
-  my (@command) = @_;
-  ($opt{verbose} > 2) and print STDERR "$PROG: Calling '@command'\n";
-  unless (system(@command) == 0) {
-    if ($? & 128) {
-        die "'@command' dumped core\n";
-    }
-    if (my $sig = $? & 127) {
-        die "'@command' caught sig $sig\n";
-    }
-    if (my $exit = $? >> 8) {
-        die "'@command' returned $exit\n";
-    }
-    if ($!) {
-        die "Syserr on system '@command': $!\n";
-    }
-    die "Unknown error on '@command'\n";
-  }
-}
