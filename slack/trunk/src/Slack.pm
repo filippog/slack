@@ -186,12 +186,14 @@ sub get_options {
     exit 0;
   }
 
+  # Get rid of the quiet handler
+  delete $arg{opthash}->{quiet};
+
   # If we've been given a hashref, save our options there at this
   # stage, so the caller can see what was passed on the command line.
   # Unfortunately, perl has no .replace function, so we iterate.
   if (ref $arg{command_line_hash} eq 'HASH') {
     while (my ($k, $v) = each %{$arg{opthash}}) {
-      next if ($k eq "quiet"); # quiet is a subroutine we don't need to store
       $arg{command_line_hash}->{$k} = $v;
     }
   }
