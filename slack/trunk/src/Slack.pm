@@ -162,6 +162,10 @@ sub get_options {
     $arg{opthash} = {};
   }
 
+  if (not defined $arg{usage}) {
+    $arg{usage} = default_usage($0);
+  }
+
   my @extra_options = ();  # extra arguments to getoptions
   if (defined $arg{command_line_options}) {
     @extra_options = @{$arg{command_line_options}};

@@ -2,6 +2,7 @@
 	* added support for "make dist"
 	* slack-getroles: don't prepend source for paths to role-list
 	    beginning with './' (important for testing)
+	* Slack.pm: get_options(): generate default usage if no usage given
 
 2004-12-22  Alan Sundell  <alan@sundell.net>
 	* Version 0.13
