@@ -25,6 +25,7 @@ use constant LIBEXEC_DIR => '/usr/lib/slack';
 my @backend_flags = ();
 # Arguments to pass to slack-installfiles for backup purposes
 my @backup_flags = ();
+
 my @roles;
 
 sub run_command (@);
@@ -62,11 +63,17 @@ Options:
   -c, --cache  DIR
       Local cache directory for slack files
 
+  -t, --stage  DIR
+      Local staging directory for slack files
+
   -r, --root  DIR
       Root destination for slack files
 
   -n, --dry-run
       Don't write any files to disk -- just report what would have been done.
+
+  --role-list
+      Role list for slack-getroles
 
   -b, --backup
       Make backups of existing files in ROOT that are overwritten
@@ -121,9 +128,11 @@ sub read_config () {
       'backup|b',
       'backup-dir=s',
       'config|C=s',
+      'role-list=s',
       'dry-run|n',
       'source|s=s',
       'cache|c=s',
+      'stage|t=s',
       'root|r=s',
       ) or die $usage;
     if ($opt{help}) {
@@ -151,7 +160,7 @@ if ($command_line_opt{'dry-run'}) {
 if ($command_line_opt{'verbose'} > 1) {
   push @backend_flags, ('--verbose') x ($command_line_opt{'verbose'} - 1);
 }
-for my $option (qw(config root cache source role-list)) {
+for my $option (qw(config root cache stage source)) {
   if ($command_line_opt{$option}) {
     push @backend_flags, "--$option=$command_line_opt{$option}";
   }
@@ -161,6 +170,10 @@ for my $option (qw(config root cache source role-list)) {
 # Get a list of roles to install from slack-getroles {{{
 if (not @ARGV) {
   my @command = (LIBEXEC_DIR.'/slack-getroles', @backend_flags);
+  # getroles also can take 'role-list'
+  if ($command_line_opt{'role-list'}) {
+    push @command, "--role-list=$command_line_opt{'role-list'}";
+  }
   $opt{verbose} and print STDERR "$PROG: getroles\n";
   ($opt{verbose} > 1) and print STDERR "$PROG: Calling '@command' to get a list of roles for this host.\n";
   my ($roles_pid, $roles_fh);
@@ -216,6 +229,10 @@ for my $role (@roles) {
   # sync
   $opt{verbose} and print STDERR "$PROG: sync $role\n";
   run_command(LIBEXEC_DIR.'/slack-sync',
+    @backend_flags, $role);
+  # stage
+  $opt{verbose} and print STDERR "$PROG: stage $role\n";
+  run_command(LIBEXEC_DIR.'/slack-stage',
     @backend_flags, $role);
   # fixfiles
   $opt{verbose} and print STDERR "$PROG: fixfiles $role\n";

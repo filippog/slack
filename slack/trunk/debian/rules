@@ -19,6 +19,7 @@ INSTALL_FILE = $(INSTALL) -p    -o root -g root  -m  644
 INSTALL_PROGRAM = $(INSTALL) -p    -o root -g root  -m  755
 INSTALL_SCRIPT = $(INSTALL) -p    -o root -g root  -m  755
 INSTALL_DIR = $(INSTALL) -p -d -o root -g root  -m  755
+INSTALL_PRIV_DIR = $(INSTALL) -p -d -o root -g root  -m  700
 
 # backwards compatibility stuff, from dpkg-architecture manpage
 DEB_BUILD_ARCH := $(shell dpkg --print-installation-architecture)
@@ -52,19 +53,18 @@ binary-indep:	checkroot build
 			debian/tmp/DEBIAN \
 			debian/tmp/usr/sbin \
 			debian/tmp/usr/share/doc/slack \
-			debian/tmp/usr/share/man/man5 \
-			debian/tmp/usr/share/man/man8 \
 			debian/tmp/usr/lib/slack \
-			debian/tmp/etc
+			debian/tmp/etc \
+			debian/tmp/var/lib \
+			debian/tmp/var/cache
 	$(MAKE) install DESTDIR=`pwd`/debian/tmp
 	$(INSTALL_FILE) debian/changelog debian/tmp/usr/share/doc/slack/changelog.Debian
 	$(INSTALL_FILE) README ChangeLog TODO debian/tmp/usr/share/doc/slack/
 	gzip -9fr `find debian/tmp/usr/share/doc/ debian/tmp/usr/share/man/ -type f`
-	$(INSTALL_SCRIPT) debian/postrm   debian/tmp/DEBIAN
+	$(INSTALL_SCRIPT) debian/prerm   debian/tmp/DEBIAN
 	(cd debian/tmp; find ./etc -type f | sed s,.,,) > debian/tmp/DEBIAN/conffiles
-	dpkg-gencontrol -isp
 	chown -R root.root debian/tmp
-	chmod -R go=rX debian/tmp
+	dpkg-gencontrol -isp
 	dpkg --build debian/tmp ..
 
 binary-arch:	checkroot clean build

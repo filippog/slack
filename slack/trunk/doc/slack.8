@@ -1,0 +1,98 @@
+.\" $Header$
+.\" vim:tw=72:filetype=nroff
+.\"
+.\"       manpage for slack.conf
+.\"
+.TH slack 8 2004-10-22 "Administrative commands" 
+
+.SH NAME
+slack \- Sysadmin's lazy autoconfiguration kit
+
+.SH SYNOPSIS
+
+\fBslack\fR [\fIoption ...\fR] [\fIrole ...\fR]
+
+.SH DESCRIPTION
+
+slack is a master command which coordinates the activities of its
+backends, which variously:
+
+.IP \(bu
+determine the list of roles to be installed on this server
+.IP \(bu
+create a local cached copy of the role files from the central repository
+.IP \(bu
+merge file trees from subroles into a single, unified tree
+.IP \(bu
+install files onto the local filesystem
+.IP \(bu
+run scripts before and after installation
+
+.PP
+Options you give to slack will be passed along to the backends.
+
+.SH OPTIONS
+.TP
+\fB\-C\fR, \fB\-\-config FILE\fR
+Use the specfied FILE for configuration instead of the default,
+.IR /etc/slack.conf .
+.TP
+\fB\-s\fR, \fB\-\-source DIR\fR
+Source directory for slack files
+.TP
+\fB\-c\fR, \fB\-\-cache DIR\fR
+Local cache directory for slack files
+.TP
+\fB\-t\fR, \fB\-\-stage DIR\fR
+Local staging directory for slack files
+.TP
+\fB\-r\fR, \fB\-\-root DIR\fR
+Root destination for slack files
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Increase verbosity.  Can be specified multiple times.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print a usage statement.
+.TP
+\fB\-n\fR, \fB\-\-dry\-run\fR
+Don't write any files to disk -- just report what would have been don.
+.TP
+\fB\-\-role\-list\fR
+Role list for
+.BR slack-getroles (8).
+.TP
+\fB\-b\fR, \fB\-\-backup\fR
+Make backups of existing files in ROOT that are overwritten.
+.TP
+\fB\-\-backup\-dir\fR
+Put backups from the
+.B \-\-backup
+option into this directory.
+
+.SH EXAMPLES
+
+.PP
+To install all the roles configured in the role list for a server:
+.RS
+slack
+.RE
+.PP
+To install a specific role:
+.RS
+slack
+.I rolename
+.RE
+.PP
+To test a new role before checking in the changes:
+.RS
+slack --source 
+.IR user @ workstation :/home/ user /.../slack
+.I rolename
+.RE
+
+
+.SH FILES
+.I /etc/slack.conf
+.SH SEE ALSO
+.BR slack.conf(5)

@@ -2,7 +2,7 @@
 # $Id$
 include ../Makefile.common
 
-BACKENDS = slack-getroles slack-installfiles slack-runscript slack-sync
+BACKENDS = slack-getroles slack-installfiles slack-runscript slack-sync slack-stage
 
 all:
 
@@ -15,7 +15,8 @@ install-bin: all
 	@set -ex;\
 	for i in $(BACKENDS); do \
 	$(INSTALL) $$i $(DESTDIR)$(slack_libexecdir); done
-	$(MKDIR) $(DESTDIR)$(slack_localstatedir)
+	$(INSTALL) -p -d -m $(PRIVDIRMODE) $(DESTDIR)$(slack_localstatedir)
+	$(INSTALL) -p -d -m $(PRIVDIRMODE) $(DESTDIR)$(slack_localcachedir)
 
 install-conf: all
 	$(MKDIR) $(DESTDIR)$(sysconfdir)

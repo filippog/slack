@@ -1,3 +1,15 @@
+2004-10-22  Alan Sundell  <alan@sundell.net>
+
+	* Version 0.10
+	* version bump to deal with downstream version increments
+	* slack-getroles: allow roles list to be relative to source
+	* [all]: Add a new "staging" step
+	* slack-sync, slack-getroles: allow digits in hostnames everywhere
+		this time
+	* Makefile.common: add a /var/cache/slack for CACHE
+	* doc/slack.8: new manpage
+	* slack,slack-getroles: allow a --role-list argument
+
 2004-08-13  Alan Sundell  <alan@sundell.net>
 
 	* Version 0.7

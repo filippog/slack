@@ -13,6 +13,9 @@ localstatedir	= ${prefix}/var
 
 slack_libexecdir	= ${libexecdir}/slack
 slack_localstatedir= ${localstatedir}/lib/slack
+slack_localcachedir= ${localstatedir}/cache/slack
 
 INSTALL		= install
 MKDIR		= mkdir -p
+
+PRIVDIRMODE	= 0700

@@ -1,3 +1,12 @@
+slack (0.10-1) stable; urgency=low
+
+  * New upstream source (see ChangeLog).
+        chiefly: add new staging step, removing need for .keepme~ files
+  * Make sure CACHE and STAGE are installed mode 0700
+  * Remove CACHE and STAGE on purge/remove
+
+ -- Alan Sundell <alan@sundell.net>  Fri, 22 Oct 2004 16:00:00 -0700
+
 slack (0.7-1) stable; urgency=low
 
   * New upstream source.

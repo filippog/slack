@@ -56,14 +56,20 @@ Options:
   -C, --config  FILE
       Use this config file instead of /etc/slack.conf
 
+  --role-list
+      Role list location (can be relative to SOURCE)
+
   -s, --source  DIR
       Source for slack files
 
   -c, --cache  DIR
       Local cache directory for slack files
 
+  -t, --stage  DIR
+      Local staging directory for slack files [ignored]
+
   -r, --root  DIR
-      Root destination for slack files
+      Root destination for slack files [ignored]
 
   -n, --dry-run
       Don't write any files to disk -- just report what would have been done.
@@ -119,9 +125,11 @@ sub read_config () {
       'backup|b',
       'backup-dir=s',
       'config|C=s',
+      'role-list=s',
       'dry-run|n',
       'source|s=s',
       'cache|c=s',
+      'stage|t=s',
       'root|r=s',
       ) or die $usage;
     if ($opt{help}) {
@@ -148,7 +156,7 @@ if ($opt{backup} and $opt{'backup-dir'}) {
   push(@rsync, "--backup", "--backup-dir=$opt{'backup-dir'}");
 }
 # Look at source type, and add options if necessary
-if ($opt{source} =~ m/^[a-zA-Z_@\.-]+::/) {
+if ($opt{source} =~ m/^[\w@\.-]+::/) {
   # This is tunnelled rsync, and so needs an extra option
   push @rsync, '-e', 'ssh';
 }
@@ -162,6 +170,13 @@ if ($opt{'verbose'} > 1) {
   push @rsync, '--verbose';
 }
 # }}}
+
+# See if role-list is actually relative to source, and pre-pend source
+# if need be.
+unless ($opt{'role-list'} =~ m#^/# or
+        $opt{'role-list'} =~ m#^[\w@\.-]+:#) {
+  $opt{'role-list'} = $opt{source} . '/' . $opt{'role-list'};
+}
 
 # Copy a non-local list locally
 if ($opt{'role-list'} =~ m#^[\w@\.-]+:#) {

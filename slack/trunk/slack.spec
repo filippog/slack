@@ -1,6 +1,6 @@
 Summary: slack configuration management tool
 Name: slack
-Version: 0.7
+Version: 0.10
 Release: 1
 License: GPL
 Group: System Environment/Libraries
@@ -35,16 +35,23 @@ rm -rf $RPM_BUILD_ROOT
 %{_sbindir}
 %{_libdir}/slack
 %{_mandir}/man5
+%{_mandir}/man8
+%defattr(0700,root,root)
 %{_localstatedir}/lib/slack
-
-%pre
-
-%post
+%{_localstatedir}/cache/slack
 
 %preun
-rm -rf /var/lib/slack/cache
+if [ $1 = 0 ] ; then
+    . /etc/slack.conf
+    rm -rf "$CACHE"/*
+    rm -rf "$STAGE"
+fi
 
 %changelog
+* Fri Oct 22 2004 Alan Sundell <alan@sundell.net> 0.10-1
+- new upstram source (see ChangeLog)
+    adds a new "staging" step, which elimates the need for .keepme~ files
+
 * Fri Aug 13 2004 Alan Sundell <alan@sundell.net> 0.7-1
 - new upstream source
 

@@ -24,8 +24,7 @@ my @rsync = ('rsync',
               '--times',
               '--perms',
               '--sparse',
-              '--files-from=-',
-              '--from0',
+              '--delete',
               );
 
 (my $PROG = $0) =~ s#.*/##;
@@ -66,6 +65,9 @@ Options:
 
   -c, --cache  DIR
       Local cache directory for slack files
+
+  -t, --stage  DIR
+      Local staging directory for slack files
 
   -r, --root  DIR
       Root destination for slack files
@@ -127,6 +129,7 @@ sub read_config () {
       'dry-run|n',
       'source|s=s',
       'cache|c=s',
+      'stage|t=s',
       'root|r=s',
       ) or die $usage;
     if ($opt{help}) {
@@ -154,7 +157,7 @@ if ($opt{backup} and $opt{'backup-dir'}) {
   push(@rsync, "--backup", "--backup-dir=$opt{'backup-dir'}");
 }
 # Look at source type, and add options if necessary
-if ($opt{source} =~ m/^[a-zA-Z_@\.-]+::/) {
+if ($opt{source} =~ m/^[\w@\.-]+::/) {
   # This is tunnelled rsync, and so needs an extra option
   push @rsync, '-e', 'ssh';
 }
@@ -169,21 +172,16 @@ if ($opt{'verbose'} > 1) {
 }
 # }}}
 
+# Make sure we've got the right perms before we copy stuff down
+check_cache();
+
 # copy over the new files
 for my $full_role (@ARGV) {
-  # Split the full role (e.g. google.foogle.woogle) into components
-  my @role_parts = split(/\./, $full_role);
-  # Reassemble parts one at a time onto @role and sync as we go,
-  # so we do "google", then "google.foogle", then "google.foogle.woogle"
-  my @role = ();
-  # Make sure we've got the right perms before we copy stuff down
-  check_cache();
-  while (defined (my $part = shift @role_parts)) {
-    push @role, $part;
-    ($opt{verbose} > 0) and print STDERR "$PROG: Calling sync_role for @role\n";
-    sync_role(@role);
-  }
-  apply_default_perms_to_role($role[0]);
+  # Get the first element of the role name (the base role)
+  # e.g., from "google.foogle.woogle", get "google"
+  my $base_role = (split /\./, $full_role, 2)[$[];
+  ($opt{verbose} > 0) and print STDERR "$PROG: Calling sync_role for $base_role\n";
+  sync_role($base_role);
 }
 exit 0;
 
@@ -211,36 +209,20 @@ sub check_cache () {
 
 # Copy the files for a role from SOURCE to CACHE
 sub sync_role (@) {
-  my @role = @_;
+  my ($role) = @_;
   my @subdirs;
-  my @this_rsync = @rsync;
   my ($source, $destination);
-  # For the base role, do both files and scripts, and delete any files
-  # that don't exist in the repository.  For all subroles, just do the
-  # files, and don't delete (otherwise we'll delete all files not in
-  # the subrole, which may be most of them!)
-  if (scalar @role == 1) {
-    @subdirs = qw(files scripts);
-    push @this_rsync, "--delete";
-    # $role[$[] is the base role name
-    $source = $opt{source} . "/roles/" . $role[$[] . "/";
-    $destination = $opt{cache} . "/roles/" . $role[$[] . "/";
-  } else {
-    # for subroles, we're stuffing the stuff in files.foo.bar/ into files/
-    push @this_rsync, "--no-relative";
-    # It'd be nice if we could just do all subroles here, one after
-    # another, but apparently rsync ignores the second appearance of a
-    # file, so files in subsubroles would no longer override files by
-    # the same name in subroles if we did that.
-    @subdirs = (join(".", "files", @role[($[+1)..$#role])."/");
-    $source = $opt{source} . "/roles/" . $role[$[] . "/";
-    $destination = $opt{cache} . "/roles/" . $role[$[] . "/files/";
-  }
 
-  my @command = (@this_rsync, $source, $destination);
-  ($opt{verbose} > 0) and print STDERR "$PROG: Syncing ".join(", ",@subdirs)." from $source with '@command'\n";
+  # $role[$[] is the base role name (the first element in the array)
+  # Pull down the whole tree locally
+  $source = $opt{source} . "/roles/" . $role . "/";
+  $destination = $opt{cache} . "/roles/" . $role . "/";
+  
+  my @command = (@rsync, $source, $destination);
+  ($opt{verbose} > 0) and print STDERR "$PROG: Syncing cache from $source with '@command'\n";
   my ($rsync_pid, $rsync_fh);
 
+  # Make sure our destination directory exists (or rsync will error out)
   if (not -d $destination) {
     if (not $opt{'dry-run'}) {
       ($opt{verbose} > 0) and print STDERR "$PROG: Creating '$destination'\n";
@@ -253,12 +235,14 @@ sub sync_role (@) {
 
   # Divide into parent (which will make a list of files to install)
   # and child (which will exec rsync)
-  if ($rsync_pid = open($rsync_fh, "|-")) {
+  if ($rsync_pid = fork) {
     # Parent
   } elsif (defined $rsync_pid) {
     # Child
     # This redirection is necessary because rsync sends
     #   verbose output to STDOUT
+    open(STDIN, "<", "/dev/null")
+      or die "Could not redirect STDIN from /dev/null\n";
     open(STDOUT, ">&STDERR")
       or die "Could not redirect STDOUT to STDERR\n";
     exec(@command);
@@ -267,15 +251,12 @@ sub sync_role (@) {
     die "Could not fork: $!\n";
   }
 
-  # send the list of directories to rsync (delimited by nulls
-  # since we gave --from0 in options)
-  print $rsync_fh join("\0", (@subdirs, ""));
-
-  # Check return value
-  unless (close($rsync_fh)) {
-    if ($!) {
-        die "Syserr on system '@command': $!\n";
-    }
+  # Wait for rsync to exit and check return value
+  my $kid = waitpid($rsync_pid, 0);
+  if ($kid != $rsync_pid) {
+    # this should never happen, but just in case...
+    die "waitpid returned $kid\n";
+  } elsif ($?) {
     if ($? & 128) {
         die "'@command' dumped core\n";
     }
@@ -289,45 +270,3 @@ sub sync_role (@) {
   }
 }
 
-# This just takes the base role, and chmods everything under it
-sub apply_default_perms_to_role ($) {
-  my ($role) = @_;
-  my $destination = $opt{cache} . "/roles/" . $role;
-  ($opt{verbose} > 0) and print STDERR "$PROG: Setting default perms on $destination\n";
-  if ($> != 0) {
-    warn "WARNING[$PROG]: Not superuser; won't be able to chown files\n";
-  }
-  # Use File::Find to recurse the directory
-  find({
-      # The "wanted" subroutine is called for every directory entry
-      wanted => sub {
-        return if $opt{'dry-run'};
-        if (-l) {
-          # symlinks shouldn't be in here,
-          #     since we dereference when copying
-          warn "WARNING[$PROG]: Skipping symlink at $File::Find::name: $!\n";
-          return;
-        } elsif (-f _) { # results of last stat saved in the "_"
-          if (-x _) {
-            chmod 0555, $_
-              or die "Could not chmod 0555 $File::Find::name: $!";
-          } else {
-            chmod 0444, $_
-              or die "Could not chmod 0444 $File::Find::name: $!";
-          }
-        } elsif (-d _) {
-          chmod 0755, $_
-            or die "Could not chmod 0755 $File::Find::name: $!";
-        } else {
-          warn "WARNING[$PROG]: Unknown file type at $File::Find::name: $!\n";
-        }
-        return if $> != 0; # skip chowning if not superuser
-        chown 0, 0, $_
-          or die "Could not chown 0:0 $File::Find::name: $!";
-      },
-      # end of wanted function
-    },
-    # way down here, we have the directory to traverse with File::Find
-    $destination,
-  );
-}

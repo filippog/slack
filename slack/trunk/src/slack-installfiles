@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 # vim:sw=2
 # vim600:fdm=marker
-# This script is in charge of copying files from the local cache to the root
+# This script is in charge of copying files from the local stage to the root
 # of the local filesystem
 
 require 5.006;
@@ -66,6 +66,9 @@ Options:
   -c, --cache  DIR
       Local cache directory for slack files
 
+  -t, --stage  DIR
+      Local staging directory for slack files
+
   -r, --root  DIR
       Root destination for slack files
 
@@ -126,6 +129,7 @@ sub read_config () {
       'dry-run|n',
       'source|s=s',
       'cache|c=s',
+      'stage|t=s',
       'root|r=s',
       ) or die $usage;
     if ($opt{help}) {
@@ -139,7 +143,7 @@ sub read_config () {
 # Arguments are required
 die "No roles given!\n\n$usage" unless @ARGV;
 die "No root defined!\n\n$usage" unless $opt{root};
-die "No cache defined!\n\n$usage" unless $opt{cache};
+die "No stage defined!\n\n$usage" unless $opt{stage};
 
 unless (-d $opt{root}) {
     if (not $opt{'dry-run'}) {
@@ -181,7 +185,7 @@ exit 0;
 sub install_files ($) {
   my ($role) = @_;
   # final / is important for rsync
-  my $source = $opt{cache} . "/roles/" . $role . "/files/";
+  my $source = $opt{stage} . "/roles/" . $role . "/files/";
   my $destination = $opt{root} . "/";
   ($opt{verbose} > 0) and print STDERR "$PROG: Syncing '$source' to '$destination'\n";
   my @command = (@rsync, $source, $destination);
