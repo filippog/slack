@@ -1,11 +1,8 @@
 # $Id$
 
 #################
-Pass variables down to scripts in environment:
-    HOSTNAME (--hostname=)
-    VERBOSE
-Add an option to skip sync so you can push out the cache ahead of time, and
     just skip syncing if source equals cache.
+    logging
 #################
 
 PRE-1.0:
