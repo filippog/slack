@@ -130,15 +130,23 @@ sub sync_role ($@) {
   my @subdirs;
   my @this_rsync = @rsync;
 
-  # For the base role, do both files and scripts, and delete any files
-  # that don't exist in the repository.  For all subroles, just do the
-  # files, and don't delete (otherwise we'll delete all files not in
-  # the subrole, which may be most of them!)
-  if (scalar @role == 1) {
+  # If we were only given one role part, we're in the base role
+  my $in_base_role = (scalar @role == 1);
+
+  # For the base role, do both files and scripts.
+  # For all subroles, just do the files.
+  # (If we wanted script subroles to work like files, we'd get rid of this)
+  if ($in_base_role) {
     @subdirs = qw(files scripts);
-    push @this_rsync, "--delete";
   } else {
     @subdirs = qw(files);
+  }
+
+  # For the base role, delete any files that don't exist in the cache.
+  # Not for the subrole (otherwise we'll delete all files not in
+  # the subrole, which may be most of them!)
+  if ($in_base_role) {
+    push @this_rsync, "--delete";
   }
 
   for my $subdir (@subdirs) {
@@ -151,7 +159,7 @@ sub sync_role ($@) {
     # final / is important for rsync
     my $source = $opt{cache} . "/roles/" . $src_path . "/";
     my $destination = $opt{stage} . "/roles/" . $dst_path . "/";
-    if (not -d $destination) {
+    if (not -d $destination and -d $source) {
         ($opt{verbose} > 0) and print STDERR "$PROG: Creating '$destination'\n";
         if (not $opt{'dry-run'}) {
           eval { mkpath($destination); };
@@ -161,7 +169,17 @@ sub sync_role ($@) {
 
     # We no longer require the source to exist
     if (not -d $source) {
-      # fuhgeddaboutit
+      # but we need to remove the destination if the source
+      # doesn't exist and we're in the base role
+      if ($in_base_role) {
+        rmtree($destination);
+        # rmtree() doesn't throw exceptions or give a return value useful
+        # for detecting failure, so we just check after the fact.
+        die "Could not rmtree '$destination' when '$source' missing\n"
+          if -e $destination;
+      }
+      # if we continue, rsync will fail because source is missing,
+      # so we don't.
       next;
     }
 
