@@ -21,7 +21,6 @@ my @rsync = ('rsync',
               '--links',
               '--times',
               '--sparse',
-              '--delete',
               );
 
 (my $PROG = $0) =~ s#.*/##;
@@ -178,10 +177,14 @@ for my $full_role (@ARGV) {
 sub sync_role (@) {
   my @role = @_;
   my @subdirs;
-  # For the base role, do both files and scripts.  For all subroles,
-  # just do the files
+  my @this_rsync = @rsync;
+  # For the base role, do both files and scripts, and delete any files
+  # that don't exist in the repository.  For all subroles, just do the
+  # files, and don't delete (otherwise we'll delete all files not in
+  # the subrole, which may be most of them!)
   if (scalar @role == 1) {
     @subdirs = qw(files scripts);
+    push @this_rsync, "--delete";
   } else {
     @subdirs = qw(files);
   }
@@ -201,7 +204,7 @@ sub sync_role (@) {
           die "Could not mkpath cache dir '$destination': $@\n" if $@;
         }
     }
-    my @command = (@rsync, $source, $destination);
+    my @command = (@this_rsync, $source, $destination);
     $opt{verbose} and print STDERR "$PROG: Syncing $src_path with '@command'\n";
     unless (system(@command) == 0) {
       if ($!) {
