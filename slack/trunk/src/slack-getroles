@@ -85,6 +85,7 @@ if ($opt{'verbose'} > 1) {
 # See if role-list is actually relative to source, and pre-pend source
 # if need be.
 unless ($opt{'role-list'} =~ m#^/# or
+        $opt{'role-list'} =~ m#^\./# or
         $opt{'role-list'} =~ m#^[\w@\.-]+:#) {
   if (not defined $opt{source}) {
     die "Relative path to role-list given, but source not defined!\n\n$usage\n";

@@ -1,5 +1,7 @@
 2005-01-04  Alan Sundell  <alan@sundell.net>
 	* added support for "make dist"
+	* slack-getroles: don't prepend source for paths to role-list
+	    beginning with './' (important for testing)
 
 2004-12-22  Alan Sundell  <alan@sundell.net>
 	* Version 0.13
