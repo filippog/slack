@@ -1,6 +1,6 @@
 Summary: slack configuration management tool
 Name: slack
-Version: 0.12.2
+Version: 0.13
 Release: 1
 License: GPL
 Group: System Environment/Libraries
@@ -48,6 +48,13 @@ if [ $1 = 0 ] ; then
 fi
 
 %changelog
+* Wed Dec 22 2004 Alan Sundell <alan@sundell.net> 0.13-1
+- new upstream source (see ChangeLog)
+    adds --hostname, --no-sync, --libexec-dir options
+    exports root, cache, source, stage, hostname, verbose to script
+        environment
+    minor fixes for bugs introduced in 0.12.2
+
 * Tue Dec 21 2004 Alan Sundell <alan@sundell.net> 0.12.2-1
 - new upstream source (see ChangeLog)
     moves functions into common library Slack.pm

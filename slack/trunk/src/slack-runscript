@@ -18,6 +18,9 @@ use constant LIB_DIR => '/usr/lib/slack';
 use lib LIB_DIR;
 use Slack;
 
+# Export these options to the environment of the script
+my @export_options = qw(root stage cache source hostname verbose);
+
 (my $PROG = $0) =~ s#.*/##;
 
 ########################################
@@ -32,11 +35,6 @@ select((select(STDERR), $|=1)[0]);
 chdir('/')
   or die "Could not chdir '/': $!";
 
-# Start with a clean environment
-%ENV = (
-  PATH => '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
-);
-
 ########################################
 # Config and option parsing {{{
 my $usage = Slack::default_usage("$PROG [options] <action> <role> [<role>...]");
@@ -45,7 +43,7 @@ my %opt = ();
 Slack::get_options(
   opthash => \%opt,
   usage => $usage,
-  required_options => [ qw(stage) ],
+  required_options => \@export_options,
 );
 
 my $action = shift || die "No script to run!\n\n$usage";
@@ -53,6 +51,20 @@ my $action = shift || die "No script to run!\n\n$usage";
 die "No roles given!\n\n$usage" unless @ARGV;
 
 # }}}
+
+# Start with a clean environment
+%ENV = (
+  PATH => '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+);
+# Export certain variables to the environment.  These are guaranteed to
+# be set because we require them in get_options above.
+for my $option (@export_options) {
+  my $env_var = $option;
+  $env_var =~ tr/a-z-/A-Z_/;
+  $ENV{$env_var} = $opt{$option};
+}
+# We want to decrement the verbose value for the child if it's set.
+$ENV{VERBOSE}-- if $ENV{VERBOSE};
 
 # Run the script for each role given, if it exists and is executable
 for my $role (@ARGV) {

@@ -1,16 +1,26 @@
+slack (0.13-1) stable; urgency=low
+
+  * New upstream source (see ChangeLog).
+        adds --hostname, --no-sync, --libexec-dir options
+        exports root, cache, source, stage, hostname, verbose to script
+            environment
+        minor fixes for bugs introduced in 0.12.2
+  
+ -- Alan Sundell <alan@sundell.net>  Wed, 21 Dec 2004 16:00:00 -0800
+
 slack (0.12.2-1) stable; urgency=low
 
   * New upstream source (see ChangeLog).
         moves functions into common library Slack.pm
   
- -- Alan Sundell <alan@sundell.net>  Thu, 21 Dec 2004 20:20:00 -0800
+ -- Alan Sundell <alan@sundell.net>  Tue, 21 Dec 2004 20:20:00 -0800
 
 slack (0.12.1-1) stable; urgency=low
 
   * New upstream source (see ChangeLog).
         fixes bug introduced in 0.11-1 that broke backups
   
- -- Alan Sundell <alan@sundell.net>  Thu, 21 Dec 2004 00:20:00 -0800
+ -- Alan Sundell <alan@sundell.net>  Tue, 21 Dec 2004 00:20:00 -0800
 
 slack (0.12-1) stable; urgency=low
 

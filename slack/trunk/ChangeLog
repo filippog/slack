@@ -1,16 +1,15 @@
 2004-12-22  Alan Sundell  <alan@sundell.net>
-	* [internal release]
+	* Version 0.13
 	* slack,Slack.pm,slack-getroles: add a --hostname option,
 	    use that to select roles when provided.
-
-2004-12-22  Alan Sundell  <alan@sundell.net>
-	* [internal release]
+	* slack-runscript: export these options to the environment:
+		root, cache, source, stage, hostname, verbose
 	* slack: add --no-sync option to skip syncing
 		 add --libexec-dir option for testing
 		 reclaim run_command() and rename it run_backend(),
 		    handle libexec dir in there.
 	* Slack.pm: fix handling of config file parsing verbosity
-	    back to previous behavior
+	    back to previous behavior (broken in 0.12.2)
 	* src/Makefile: install Slack.pm mode 644
 
 2004-12-21  Alan Sundell  <alan@sundell.net>
