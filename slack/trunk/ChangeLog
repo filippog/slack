@@ -1,6 +1,17 @@
+2004-05-31  Alan Sundell  <alan@sundell.net>
+
+	* Version 0.3
+	* [all]: use sigtrap
+	* [modules]: be silent with just one -v
+                     redirect rsync's STDOUT to STDERR
+	* slack: propagate verbosity down to modules
+                 make level-1 verbosity less noisy, easier to read
+                 fix error-checking after system()
+	* slack-sync: check perms on $opt{cache}/roles (root:root 0700)
+
 2004-05-23  Alan Sundell  <alan@sundell.net>
 
-	* Version (0.2)
+	* Version 0.2
 	* slack,slack-runscript: Renamed "fixperms" to "fixfiles".
 	* slack-sync: Fixed bug that would make installing a subrole
 		      install files from the subrole only, not its parent.
