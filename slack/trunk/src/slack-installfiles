@@ -174,10 +174,8 @@ if ($opt{'verbose'} > 1) {
 }
 
 # copy over the new files
-for my $full_role (@ARGV) {
-  # Split the full role (e.g. google.foogle.woogle) into components
-  my @role = split(/\./, $full_role);
-  install_files($role[0]);
+for my $role (@ARGV) {
+  install_files($role);
 }
 exit 0;
 

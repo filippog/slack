@@ -48,6 +48,10 @@ if [ $1 = 0 ] ; then
 fi
 
 %changelog
+* Fri Oct 29 2004 Alan Sundell <alan@sundell.net> 0.10.2-1
+- new upstram source (see ChangeLog)
+    use the full role name in the stage
+
 * Fri Oct 29 2004 Alan Sundell <alan@sundell.net> 0.10.1-1
 - new upstram source (see ChangeLog)
     minor code cleanups

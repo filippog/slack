@@ -28,7 +28,7 @@ my @rsync = ('rsync',
 (my $PROG = $0) =~ s#.*/##;
 
 sub check_stage ();
-sub sync_role (@);
+sub sync_role ($@);
 sub apply_default_perms_to_role ($);
 
 ########################################
@@ -176,38 +176,40 @@ for my $full_role (@ARGV) {
   check_stage();
   while (defined (my $part = shift @role_parts)) {
     push @role, $part;
-    ($opt{verbose} > 0) and print STDERR "$PROG: Calling sync_role for @role\n";
-    sync_role(@role);
+    ($opt{verbose} > 0)
+      and print STDERR "$PROG: Calling sync_role for $full_role, @role\n";
+    sync_role($full_role, @role);
   }
-  apply_default_perms_to_role($role[0]);
+
+  apply_default_perms_to_role($full_role);
 }
 exit 0;
 
 # Make sure the stage directory exists and is mode 0700, to protect files
 # underneath in transit
 sub check_stage () {
-  my $cache = $opt{stage} . "/roles";
+  my $stage = $opt{stage} . "/roles";
   if (not $opt{'dry-run'}) {
-    if (not -d $cache) {
-      ($opt{verbose} > 0) and print STDERR "$PROG: Creating '$cache'\n";
-        eval { mkpath($cache); };
-        die "Could not mkpath cache dir '$cache': $@\n" if $@;
+    if (not -d $stage) {
+      ($opt{verbose} > 0) and print STDERR "$PROG: Creating '$stage'\n";
+        eval { mkpath($stage); };
+        die "Could not mkpath cache dir '$stage': $@\n" if $@;
     }
-    ($opt{verbose} > 0) and print STDERR "$PROG: Checking perms on '$cache'\n";
+    ($opt{verbose} > 0) and print STDERR "$PROG: Checking perms on '$stage'\n";
     if ($> != 0) {
       warn "WARNING[$PROG]: Not superuser; unable to chown files\n";
     } else {
-      chown(0, 0, $cache)
-        or die "Could not chown 0:0 '$cache': $!\n";
+      chown(0, 0, $stage)
+        or die "Could not chown 0:0 '$stage': $!\n";
     }
-    chmod(0700, $cache)
-      or die "Could not chmod 0700 '$cache': $!\n";
+    chmod(0700, $stage)
+      or die "Could not chmod 0700 '$stage': $!\n";
   }
 }
 
 # Copy the files for a role from CACHE to STAGE
-sub sync_role (@) {
-  my @role = @_;
+sub sync_role ($@) {
+  my ($full_role, @role) = @_;
   my @subdirs;
   my @this_rsync = @rsync;
 
@@ -226,7 +228,8 @@ sub sync_role (@) {
     # (a)     => a/files 
     # (a,b,c) => a/files.b.c
     my $src_path = $role[0].'/'.join(".", $subdir, @role[1 .. $#role]);
-    my $dst_path = $role[0].'/'.$subdir;
+    # This one's a little simpler:
+    my $dst_path = $full_role.'/'.$subdir;
 
     # final / is important for rsync
     my $source = $opt{cache} . "/roles/" . $src_path . "/";
@@ -295,6 +298,7 @@ sub apply_default_perms_to_role ($) {
       # The "wanted" subroutine is called for every directory entry
       wanted => sub {
         return if $opt{'dry-run'};
+        ($opt{verbose} > 2) and print STDERR "$File::Find::name\n";
         if (-l) {
           # symlinks shouldn't be in here,
           #     since we dereference when copying

@@ -207,6 +207,15 @@ if (not @ARGV) {
 }
 # }}}
 
+# Check role name syntax {{{
+for my $role (@roles) {
+  # Roles MUST begin with a letter.  All else is reserved.
+  if ($role !~ m/^[a-zA-Z]/) {
+    die "Role '$role' does not begin with a letter!";
+  }
+}
+# }}}
+
 # Figure out a place to put backups {{{
 if ($opt{backup} and $opt{'backup-dir'}) {
   push @backup_flags,
@@ -221,15 +230,11 @@ if ($opt{backup} and $opt{'backup-dir'}) {
 
 $opt{verbose} and print STDERR "$PROG: installing roles: @roles\n";
 # sync all the roles down
+$opt{verbose} and print STDERR "$PROG: sync @roles\n";
+run_command(LIBEXEC_DIR.'/slack-sync',
+  @backend_flags, @roles);
+
 for my $role (@roles) {
-  # Roles MUST begin with a letter.  All else is reserved.
-  if ($role !~ m/^[a-zA-Z]/) {
-    die "Role '$role' does not begin with a letter!";
-  }
-  # sync
-  $opt{verbose} and print STDERR "$PROG: sync $role\n";
-  run_command(LIBEXEC_DIR.'/slack-sync',
-    @backend_flags, $role);
   # stage
   $opt{verbose} and print STDERR "$PROG: stage $role\n";
   run_command(LIBEXEC_DIR.'/slack-stage',

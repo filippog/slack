@@ -1,5 +1,14 @@
 2004-10-29  Alan Sundell  <alan@sundell.net>
 
+	* Version 0.10.2
+	* [all]: use full role names in the stage directory, so there
+	    aren't collisions when multiple subroles are installed
+	* slack: call slack-sync once with all the roles
+	* slack-sync: only sync each base role once
+	* slack-stage: fix copy/paste variable misnomer
+
+2004-10-29  Alan Sundell  <alan@sundell.net>
+
 	* Version 0.10.1
 	* slack-stage: don't need --cvs-exclude
 	* [all]: get rid of $[ -- it just confuses people
