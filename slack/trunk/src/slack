@@ -9,6 +9,8 @@
 require 5.006;
 use warnings FATAL => qw(all);
 use strict;
+use sigtrap qw(die untrapped normal-signals
+               stack-trace any error-signals);
 
 use File::Path;
 use File::Find;
@@ -138,7 +140,7 @@ if ($command_line_opt{'dry-run'}) {
   push @backend_flags, '--dry-run';
 }
 if ($command_line_opt{'verbose'}) {
-  push @backend_flags, '--verbose';
+  push @backend_flags, ('--verbose') x $command_line_opt{'verbose'};
 }
 for my $option (qw(backups config root cache source role-list)) {
   if ($command_line_opt{$option}) {
@@ -150,7 +152,8 @@ for my $option (qw(backups config root cache source role-list)) {
 # Get a list of roles to install from slack-getroles {{{
 if (not @ARGV) {
   my @command = (LIBEXEC_DIR.'/slack-getroles', @backend_flags);
-  $opt{verbose} and print STDERR "$PROG: Calling '@command' to get a list of roles for this host.\n";
+  $opt{verbose} and print STDERR "$PROG: getroles\n";
+  ($opt{verbose} > 1) and print STDERR "$PROG: Calling '@command' to get a list of roles for this host.\n";
   my ($roles_pid, $roles_fh);
   if ($roles_pid = open($roles_fh, "-|")) {
     # Parent
@@ -189,29 +192,32 @@ for my $role (@roles) {
     die "Role '$role' does not begin with a letter!";
   }
   # sync
+  $opt{verbose} and print STDERR "$PROG: sync $role\n";
   run_command(LIBEXEC_DIR.'/slack-sync',
     @backend_flags, $role);
   # fixfiles
+  $opt{verbose} and print STDERR "$PROG: fixfiles $role\n";
   run_command(LIBEXEC_DIR.'/slack-runscript',
     @backend_flags, 'fixfiles', $role);
   # preinstall
+  $opt{verbose} and print STDERR "$PROG: preinstall $role\n";
   run_command(LIBEXEC_DIR.'/slack-runscript',
     @backend_flags, 'preinstall', $role);
   # installfiles
+  $opt{verbose} and print STDERR "$PROG: install $role\n";
   run_command(LIBEXEC_DIR.'/slack-installfiles',
     @backend_flags, $role);
   # postinstall
+  $opt{verbose} and print STDERR "$PROG: postinstall $role\n";
   run_command(LIBEXEC_DIR.'/slack-runscript',
     @backend_flags, 'postinstall', $role);
 }
+exit 0;
 
 sub run_command (@) {
   my (@command) = @_;
-  $opt{verbose} and print STDERR "$PROG: Calling '@command'\n";
+  ($opt{verbose} > 1) and print STDERR "$PROG: Calling '@command'\n";
   unless (system(@command) == 0) {
-    if ($!) {
-        die "Syserr on system '@command': $!\n";
-    }
     if ($? & 128) {
         die "'@command' dumped core\n";
     }
@@ -220,6 +226,9 @@ sub run_command (@) {
     }
     if (my $exit = $? >> 8) {
         die "'@command' returned $exit\n";
+    }
+    if ($!) {
+        die "Syserr on system '@command': $!\n";
     }
     die "Unknown error on '@command'\n";
   }
