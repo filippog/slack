@@ -9,6 +9,8 @@
 require 5.006;
 use warnings FATAL => qw(all);
 use strict;
+use sigtrap qw(die untrapped normal-signals
+               stack-trace any error-signals);
 
 use File::Path;
 use Sys::Hostname;
@@ -152,7 +154,7 @@ if ($opt{'dry-run'}) {
   push @rsync, '--dry-run';
 }
 # Pass options along to rsync
-if ($opt{'verbose'}) {
+if ($opt{'verbose'} > 2) {
   push @rsync, '--verbose';
 }
 # }}}
@@ -165,7 +167,7 @@ if ($opt{'role-list'} =~ m#^[a-zA-Z_@\.-]+:#) {
 # Read in the roles list
 my @roles = ();
 my $host_found = 0;
-$opt{verbose} and print STDERR "$PROG: Reading '$opt{'role-list'}'\n";
+($opt{verbose} > 1) and print STDERR "$PROG: Reading '$opt{'role-list'}'\n";
 open(ROLES, "<", $opt{'role-list'})
   or die "Could not open '$opt{'role-list'}' for reading: $!\n";
 while(<ROLES>) {
@@ -193,7 +195,7 @@ sub sync_list () {
   }
   # All this to run an rsync command
   my @command = (@rsync, $source, $destination);
-  $opt{verbose} and print STDERR "$PROG: Calling '@command'\n";
+  ($opt{verbose} > 1) and print STDERR "$PROG: Calling '@command'\n";
   my ($rsync_pid);
   if ($rsync_pid = fork) {
     # Parent
