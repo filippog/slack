@@ -1,5 +1,6 @@
 2004-01-05  Alan Sundell  <alan@sundell.net>
 	* slack-getroles: add a --remote-role-list option to force local sync
+	* slack-sync: we don't need File::Find anymore
 
 2005-01-04  Alan Sundell  <alan@sundell.net>
 	* added support for "make dist"

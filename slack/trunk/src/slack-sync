@@ -13,7 +13,6 @@ use sigtrap qw(die untrapped normal-signals
                stack-trace any error-signals);
 
 use File::Path;
-use File::Find;
 
 use constant LIB_DIR => '/usr/lib/slack';
 use lib LIB_DIR;
