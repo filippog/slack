@@ -1,0 +1,5 @@
+# $Header$
+# vim:filetype=crontab
+#
+# Update the slack-master source
+*/10 * * * *    root    /usr/lib/slack-master/slack-update-source

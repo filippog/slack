@@ -1,0 +1,10 @@
+#!/bin/sh
+# $Id$
+# post remove script for the Debian GNU/Linux slack package
+
+set -e
+SOURCE_CACHE=/var/lib/slack/home/source
+mkdir -p "${SOURCE_CACHE}"
+chown slack: "${SOURCE_CACHE}"
+
+exit 0

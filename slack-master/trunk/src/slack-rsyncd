@@ -1,0 +1,9 @@
+#!/bin/bash -e
+# vim:sta:si:sw=4:et:list:listchars=trail\:-,tab\:>-
+# $Header$
+#
+# slack-master
+#       This script runs the server end of a tunnelled rsync session.  It
+#       gets called out of ~slack/.ssh/authorized_keys on the master.
+#
+exec "rsync" "--config=/etc/slack-master.conf" --server --daemon .

@@ -1,0 +1,13 @@
+Source: slack-master
+Section: admin
+Priority: optional
+Maintainer: Alan Sundell <alan@sundell.net>
+Build-Depends: 
+Standards-Version: 3.6.1
+
+Package: slack-master
+Architecture: all
+Depends: ssh (>= 3.4p1), rsync (>= 2.6.0)
+Suggests: slack
+Description: rsync-over-ssh master server for slack
+ Implements an rsync-over-ssh master server for slack.
