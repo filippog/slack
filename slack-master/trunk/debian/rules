@@ -53,16 +53,16 @@ binary-indep:	checkroot build
 			debian/tmp/usr/share/doc/slack-master \
 			debian/tmp/usr/lib/slack-master \
 			debian/tmp/var/lib/slack-master/.ssh \
-			debian/tmp/etc
+			debian/tmp/etc/cron.d
 	$(INSTALL_FILE) debian/changelog debian/tmp/usr/share/doc/slack-master/changelog.Debian
 	$(INSTALL_FILE) README debian/tmp/usr/share/doc/slack-master/
 	$(INSTALL_SCRIPT) src/slack-rsyncd   debian/tmp/usr/lib/slack-master
 	$(INSTALL_SCRIPT) src/slack-update-source   debian/tmp/usr/lib/slack-master
 	$(INSTALL_FILE) src/slack-master.conf   debian/tmp/etc
+	$(INSTALL_FILE) src/slack-master.cron   debian/tmp/etc/cron.d/slack-master
 	$(INSTALL_FILE) src/authorized_keys   debian/tmp/var/lib/slack-master/.ssh
 	gzip -9fr `find debian/tmp/usr/share/doc/ debian/tmp/usr/share/man/ -type f`
 	$(INSTALL_SCRIPT) debian/postrm   debian/tmp/DEBIAN
-	$(INSTALL_SCRIPT) debian/postinst   debian/tmp/DEBIAN
 	(cd debian/tmp; find ./etc -type f | sed s,.,,) > debian/tmp/DEBIAN/conffiles
 	dpkg-gencontrol -isp
 	chown -R root.root debian/tmp

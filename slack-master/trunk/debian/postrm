@@ -7,7 +7,7 @@ set -e
 if [ "$1" = "purge" ]; then
         # purge the source cache as well
         echo "Purging local source cache"
-        rm -rf /var/lib/slack/home/source
+        rm -rf /var/lib/slack-master/source
 fi
 
 exit 0
