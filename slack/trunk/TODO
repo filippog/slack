@@ -8,16 +8,20 @@ PRE-1.0:
     - maybe readconfig() should take a list of config vars to read?
     - if we're doing backups in slack-sync, we need to append
         files(.subrole)?|scripts
-    - rsync really hates whatever fixfiles does with symlinks in accounts.
-        it's probably a bug.  track it down.
+    - rsync really hates whatever fixfiles does with symlinks in the
+        accounts role.  it's probably a bug.  track it down.
     - before running scripts, install them in some other directory, so we
         can keep track of the last script we ran for backup and warning
-        purposes.
+        purposes.  (just doing it in slack-sync wouldn't work for nagging
+        or warning purposes).  Probably we'll have to install them all
+        at once, since we don't know what other files in the scripts/
+        directory they may use.
 
 * bundle compatibility scheme
     
 * Nagging
     - we want to be able to nag admins about files they have not yet installed
+        or scripts they have not yet run
 
 * abstract out common code somehow:
     - maybe a module (util.pm?)
