@@ -2,7 +2,7 @@
 # $Id$
 include ../Makefile.common
 
-BACKENDS = slack-installfiles slack-installfiles_rsync-2.5 slack-installfiles_rsync-2.6 slack-runscript slack-sync
+BACKENDS = slack-getroles slack-installfiles slack-installfiles_rsync-2.5 slack-installfiles_rsync-2.6 slack-runscript slack-sync
 
 all:
 
