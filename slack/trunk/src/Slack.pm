@@ -11,7 +11,7 @@ use base qw(Exporter);
 use vars qw($VERSION @EXPORT @EXPORT_OK $DEFAULT_CONFIG_FILE);
 $VERSION = '0.1';
 @EXPORT    = qw();
-@EXPORT_OK = qw(run_command check_system_exit);
+@EXPORT_OK = qw();
 
 $DEFAULT_CONFIG_FILE = '/etc/slack.conf';
 
@@ -141,13 +141,6 @@ sub check_system_exit (@) {
   croak "Unknown error on '@command'";
 }
 
-sub run_command (@) {
-  my (@command) = @_;
-  unless (system(@command) == 0) {
-    check_system_exit(@command);
-  }
-}
-
 # get options from the command line and the config file
 # Arguments
 #       opthash => hashref in which to store options
@@ -198,12 +191,20 @@ sub get_options {
     $arg{opthash}->{config} = $DEFAULT_CONFIG_FILE;
   }
 
+  # We need to decide whether to be verbose about reading the config file
+  # Currently we just do it if global verbosity > 2
+  my $verbose_config = 0;
+  if (defined $arg{opthash}->{verbose}
+      and $arg{opthash}->{verbose} > 2) {
+    $verbose_config = 1;
+  }
+
   # Read options from the config file, passing along the options we've
   # gotten so far
   read_config(
       file => $arg{opthash}->{config},
       opthash => $arg{opthash},
-      verbose => $arg{opthash}->{verbose},
+      verbose => $verbose_config,
   );
 
   # We can require some options to be set

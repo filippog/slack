@@ -1,3 +1,13 @@
+2004-12-22  Alan Sundell  <alan@sundell.net>
+	* [internal release]
+	* slack: add --no-sync option to skip syncing
+		 add --libexec-dir option for testing
+		 reclaim run_command() and rename it run_backend(),
+		    handle libexec dir in there.
+	* Slack.pm: fix handling of config file parsing verbosity
+	    back to previous behavior
+	* src/Makefile: install Slack.pm mode 644
+
 2004-12-21  Alan Sundell  <alan@sundell.net>
 	* Version 0.12.2
 	* Slack.pm: A new common library

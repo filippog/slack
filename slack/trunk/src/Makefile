@@ -24,7 +24,7 @@ install-conf: all
 
 install-lib: all
 	$(MKDIR) $(DESTDIR)$(slack_libdir)
-	$(INSTALL) Slack.pm $(DESTDIR)$(slack_libdir)
+	$(INSTALL) -m 0644 Slack.pm $(DESTDIR)$(slack_libdir)
 
 clean:
 

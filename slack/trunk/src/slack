@@ -19,7 +19,9 @@ use POSIX; # for strftime
 use constant LIBEXEC_DIR => '/usr/lib/slack';
 use constant LIB_DIR => '/usr/lib/slack';
 use lib LIB_DIR;
-use Slack qw(run_command);
+use Slack;
+
+sub run_backend(@);
 
 (my $PROG = $0) =~ s#.*/##;
 
@@ -54,8 +56,15 @@ $usage .= <<EOF;
   --no-scripts
       Don't run scripts.
 
+  --no-sync
+      Skip the slack-sync step.  (useful if you're pushing stuff into
+        the CACHE outside of slack)
+
   --role-list
       Role list for slack-getroles
+
+  --libexec-dir DIR
+      Look for backend scripts in this directory.
 
 EOF
 
@@ -69,6 +78,8 @@ Slack::get_options(
     'role-list=s',
     'no-scripts|noscripts',
     'no-files|nofiles',
+    'no-sync|nosync',
+    'libexec-dir=s',
   ],
   required_options => [ qw(source cache stage root) ],
   command_line_hash => \%command_line_opt,
@@ -112,9 +123,15 @@ if ($command_line_opt{'role-list'}) {
   push @{$backend_flags{'getroles'}},
     "--role-list=$command_line_opt{'role-list'}";
 }
+
+# The libexec dir defaults to this if it wasn't specified
+# on the command line or in a config file.
+if (not defined $opt{'libexec-dir'}) {
+  $opt{'libexec-dir'} = LIBEXEC_DIR;
+}
     
 # The backup option defaults to on if it wasn't specified
-# on the command line or a config file
+# on the command line or in a config file
 if (not defined $opt{backup}) {
   $opt{backup} = 1;
 }
@@ -165,35 +182,52 @@ for my $role (@roles) {
 
 $opt{verbose} and print STDERR "$PROG: installing roles: @roles\n";
 
-# sync all the roles down at once
-$opt{verbose} and print STDERR "$PROG: sync @roles\n";
-run_command(LIBEXEC_DIR.'/slack-sync',
-  @{$backend_flags{sync}}, @roles);
+unless ($opt{'no-sync'}) {
+  # sync all the roles down at once
+  $opt{verbose} and print STDERR "$PROG: sync @roles\n";
+  run_backend('slack-sync',
+    @{$backend_flags{sync}}, @roles);
+}
 
 for my $role (@roles) {
   # stage
   $opt{verbose} and print STDERR "$PROG: stage $role\n";
-  run_command(LIBEXEC_DIR.'/slack-stage',
+  run_backend('slack-stage',
     @{$backend_flags{stage}}, $role);
 
   # preinstall
   $opt{verbose} and print STDERR "$PROG: preinstall $role\n";
-  run_command(LIBEXEC_DIR.'/slack-runscript',
+  run_backend('slack-runscript',
     @{$backend_flags{preinstall}}, 'preinstall', $role);
 
   # fixfiles
   $opt{verbose} and print STDERR "$PROG: fixfiles $role\n";
-  run_command(LIBEXEC_DIR.'/slack-runscript',
+  run_backend('slack-runscript',
     @{$backend_flags{fixfiles}}, 'fixfiles', $role);
   # installfiles
   $opt{verbose} and print STDERR "$PROG: install $role\n";
-  run_command(LIBEXEC_DIR.'/slack-installfiles',
+  run_backend('slack-installfiles',
     @{$backend_flags{installfiles}}, $role);
 
   # postinstall
   $opt{verbose} and print STDERR "$PROG: postinstall $role\n";
-  run_command(LIBEXEC_DIR.'/slack-runscript',
+  run_backend('slack-runscript',
     @{$backend_flags{postinstall}}, 'postinstall', $role);
 }
 exit 0;
+
+sub run_backend (@) {
+  my ($backend, @args) = @_;
+  # If we weren't given an explicit path, prepend the libexec dir
+  unless ($backend =~ m#^/#) {
+    $backend = $opt{'libexec-dir'} . '/' . $backend;
+  }
+
+  # Assemble our command line
+  my (@command) = ($backend, @args);
+  ($opt{verbose} > 2) and print STDERR "$PROG: Calling '@command'\n";
+  unless (system(@command) == 0) {
+    check_system_exit(@command);
+  }
+}
 
