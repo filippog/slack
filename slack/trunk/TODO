@@ -1,13 +1,9 @@
 # $Id$
 PRE-1.0:
-* slack: make level-1 verbosity less noisy, easier to read
-* slack: propagate verbosity levels down to modules
-* slack-sync: chmod cache 700
 * abstract out common code somehow
 * separate slack-runscript, slack-runfixfiles
 * allow ./configure to set paths
 * install private key and ssh config when installing (or maybe leave to a role)
-* allow username in urls
 * backup directories
 * manpages for slack, slack-backends
 --------
