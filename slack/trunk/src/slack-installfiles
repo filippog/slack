@@ -7,6 +7,8 @@
 require 5.006;
 use warnings FATAL => qw(all);
 use strict;
+use sigtrap qw(die untrapped normal-signals
+               stack-trace any error-signals);
 
 use File::Path;
 use File::Find;
@@ -156,7 +158,7 @@ if ($opt{b}) {
 if ($opt{'dry-run'}) {
   push @rsync, '--dry-run';
 }
-if ($opt{verbose}) {
+if ($opt{verbose} > 1) {
   push @rsync, '--verbose';
 }
 
@@ -166,7 +168,7 @@ for my $full_role (@ARGV) {
   my @role = split(/\./, $full_role);
   install_files($role[0]);
 }
-
+exit 0;
 
 # This subroutine takes care of actually installing the files for a role
 sub install_files ($) {
@@ -174,7 +176,7 @@ sub install_files ($) {
   # final / is important for rsync
   my $source = $opt{cache} . "/roles/" . $role . "/files/";
   my $destination = $opt{root} . "/";
-  $opt{verbose} and print STDERR "$PROG: Syncing '$source' to '$destination'\n";
+  ($opt{verbose} > 1) and print STDERR "$PROG: Syncing '$source' to '$destination'\n";
   my @command = (@rsync, $source, $destination);
   my ($rsync_pid, $rsync_fh);
 
@@ -184,6 +186,10 @@ sub install_files ($) {
     # Parent
   } elsif (defined $rsync_pid) {
     # Child
+    # This redirection is necessary because rsync sends
+    #   verbose output to STDOUT
+    open(STDOUT, ">&STDERR")
+      or die "Could not redirect STDOUT to STDERR\n";
     exec(@command);
     die "Could not exec '@command': $!\n";
   } else {
