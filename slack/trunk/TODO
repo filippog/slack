@@ -3,6 +3,8 @@
 #################
     just skip syncing if source equals cache.
     logging
+    use an "install" script, if present, instead of built-in
+        file install routines
 #################
 
 PRE-1.0:
