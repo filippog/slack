@@ -147,7 +147,7 @@ sub sync_role ($) {
   
   my @command = (@rsync, $source, $destination);
   ($opt{verbose} > 0) and print STDERR "$PROG: Syncing cache from $source with '@command'\n";
-  my ($rsync_pid, $rsync_fh);
+  my ($rsync_pid);
 
   # Make sure our destination directory exists (or rsync will error out)
   if (not -d $destination) {
