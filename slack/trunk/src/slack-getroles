@@ -203,7 +203,7 @@ sub sync_list () {
       or die "Could not redirect STDIN from /dev/null\n";
     # This redirection is necessary because rsync sends
     #   verbose output to STDOUT
-    open(STDOUT, ">&", \*STDERR)
+    open(STDOUT, ">&STDERR")
       or die "Could not redirect STDOUT to STDERR\n";
     exec(@command);
     die "Could not exec '@command': $!\n";
