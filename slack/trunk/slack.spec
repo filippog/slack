@@ -1,6 +1,6 @@
 Summary: slack configuration management tool
 Name: slack
-Version: 0.1
+Version: 0.4
 Release: 1
 License: GPL
 Group: System Environment/Libraries
@@ -43,5 +43,8 @@ rm -rf $RPM_BUILD_ROOT
 rm -rf /var/lib/slack/cache
 
 %changelog
+* Mon Jul 01 2004 Alan Sundell <alan@sundell.net> 0.4-1
+- new upstream source
+
 * Mon May 24 2004 Alan Sundell <alan@sundell.net> 0.1-1
 - initial version
