@@ -5,8 +5,10 @@ export HOME=/var/lib/slack-master
 export CVSROOT=":local:${HOME}/cvsroot"
 SLACK_SOURCE="${HOME}/source"
 
+umask 027
 mkdir -p "${SLACK_SOURCE}"
 chown "${USER}": "${SLACK_SOURCE}"
+chmod 0750 "${SLACK_SOURCE}"
 cd "${SLACK_SOURCE}"
 su -s /bin/sh "${USER}" -c "cvs -q co etc"
 su -s /bin/sh "${USER}" -c "cvs -q co roles"
