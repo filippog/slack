@@ -9,6 +9,8 @@
 require 5.006;
 use warnings FATAL => qw(all);
 use strict;
+use sigtrap qw(die untrapped normal-signals
+               stack-trace any error-signals);
 
 use File::Path;
 use File::Find;
@@ -25,6 +27,7 @@ my @rsync = ('rsync',
 
 (my $PROG = $0) =~ s#.*/##;
 
+sub check_cache ();
 sub sync_role (@);
 sub apply_default_perms_to_role ($);
 
@@ -154,7 +157,7 @@ if ($opt{'dry-run'}) {
   push @rsync, '--dry-run';
 }
 # Pass options along to rsync
-if ($opt{'verbose'}) {
+if ($opt{'verbose'} > 2) {
   push @rsync, '--verbose';
 }
 # }}}
@@ -166,14 +169,36 @@ for my $full_role (@ARGV) {
   # Reassemble parts one at a time onto @role and sync as we go,
   # so we do "google", then "google.foogle", then "google.foogle.woogle"
   my @role = ();
+  # Make sure we've got the right perms before we copy stuff down
+  check_cache();
   while (defined (my $part = shift @role_parts)) {
     push @role, $part;
-    $opt{verbose} and print STDERR "$PROG: Calling sync_role for @role\n";
+    ($opt{verbose} > 1) and print STDERR "$PROG: Calling sync_role for @role\n";
     sync_role(@role);
   }
   apply_default_perms_to_role($role[0]);
 }
+exit 0;
 
+# Make sure the cache directory exists and is mode 0700, to protect files
+# underneath in transit
+sub check_cache () {
+  my $cache = $opt{cache} . "/roles";
+  if (not $opt{'dry-run'}) {
+    if (not -d $cache) {
+      ($opt{verbose} > 1) and print STDERR "$PROG: Creating '$cache'\n";
+        eval { mkpath($cache); };
+        die "Could not mkpath cache dir '$cache': $@\n" if $@;
+    }
+    ($opt{verbose} > 1) and print STDERR "$PROG: Checking perms on '$cache'\n";
+    chown(0, 0, $cache)
+      or die "Could not chown 0:0 '$cache': $!\n";
+    chmod(0700, $cache)
+      or die "Could not chmod 0700 '$cache': $!\n";
+  }
+}
+
+# Copy the files for a role from SOURCE to CACHE
 sub sync_role (@) {
   my @role = @_;
   my @subdirs;
@@ -198,18 +223,35 @@ sub sync_role (@) {
     my $source = $opt{source} . "/roles/" . $src_path . "/";
     my $destination = $opt{cache} . "/roles/" . $dst_path . "/";
     if (not -d $destination) {
-        $opt{verbose} and print STDERR "$PROG: Creating '$destination'\n";
+        ($opt{verbose} > 1) and print STDERR "$PROG: Creating '$destination'\n";
         if (not $opt{'dry-run'}) {
           eval { mkpath($destination); };
           die "Could not mkpath cache dir '$destination': $@\n" if $@;
         }
     }
+    # All this to run an rsync command
     my @command = (@this_rsync, $source, $destination);
-    $opt{verbose} and print STDERR "$PROG: Syncing $src_path with '@command'\n";
-    unless (system(@command) == 0) {
-      if ($!) {
-          die "Syserr on system '@command': $!\n";
-      }
+    ($opt{verbose} > 1) and print STDERR "$PROG: Syncing $src_path with '@command'\n";
+    my ($rsync_pid);
+    if ($rsync_pid = fork) {
+      # Parent
+    } elsif (defined $rsync_pid) {
+      # Child
+      open(STDIN, "<", "/dev/null")
+        or die "Could not redirect STDIN from /dev/null\n";
+      # This redirection is necessary because rsync sends
+      #   verbose output to STDOUT
+      open(STDOUT, ">&STDERR")
+        or die "Could not redirect STDOUT to STDERR\n";
+      exec(@command);
+      die "Could not exec '@command': $!\n";
+    } else {
+      die "Could not fork: $!\n";
+    }
+    my $kid = waitpid($rsync_pid, 0);
+    if ($kid != $rsync_pid) {
+      die "waitpid returned $kid\n";
+    } elsif ($?) {
       if ($? & 128) {
           die "'@command' dumped core\n";
       }
@@ -228,7 +270,7 @@ sub sync_role (@) {
 sub apply_default_perms_to_role ($) {
   my ($role) = @_;
   my $destination = $opt{cache} . "/roles/" . $role;
-  $opt{verbose} and print STDERR "$PROG: Setting default perms on $destination\n";
+  ($opt{verbose} > 1) and print STDERR "$PROG: Setting default perms on $destination\n";
   if ($> != 0) {
     warn "WARNING[$PROG]: Not superuser; won't be able to chown files\n";
   }
