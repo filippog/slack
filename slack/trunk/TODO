@@ -1,4 +1,13 @@
 # $Id$
+
+#################
+Pass variables down to scripts in environment:
+    HOSTNAME (--hostname=)
+    VERBOSE
+Add an option to skip sync so you can push out the cache ahead of time, and
+    just skip syncing if source equals cache.
+#################
+
 PRE-1.0:
 * Figure out some better way to handle backup options:
     - by default, we want admins to just specify the base backup dir in config,
