@@ -37,6 +37,9 @@ by default on each host.
 \fBCACHE\fP
 A local cache directory, used as an intermediate stage when installing
 files.
+.TP
+\fBBACKUP_DIR\fP
+A directory in which to keep dated backups for rollbacks.
 
 .SH EXAMPLE
 
@@ -48,6 +51,7 @@ A typical file might look like this:
   ROLE_LIST=slack-master:/roles.conf
   ROOT=/
   CACHE=/var/lib/slack/cache
+  BACKUP_DIR=/var/lib/slack/backups
 
 .SH FILES
 .I /etc/slack.conf
