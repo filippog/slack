@@ -10,6 +10,11 @@ PRE-1.0:
         files(.subrole)?|scripts
     - rsync really hates whatever fixfiles does with symlinks in accounts.
         it's probably a bug.  track it down.
+    - before running scripts, install them in some other directory, so we
+        can keep track of the last script we ran for backup and warning
+        purposes.
+
+* bundle compatibility scheme
     
 * Nagging
     - we want to be able to nag admins about files they have not yet installed
@@ -24,9 +29,9 @@ PRE-1.0:
 * separate slack-runscript, slack-runfixfiles
 * allow ./configure to set paths
 * manpages for slack, slack-backends
+* record what roles have been installed
 --------
 LATER:
-* record what roles have been installed
 
 * build in support for heterogenous underlying distros, like subsets have
   (maybe just assing subroles)
