@@ -16,6 +16,7 @@ use File::Find;
 use constant DEFAULT_CONFIG_FILE => '/etc/slack.conf';
 
 my @rsync = ('rsync',
+              '--cvs-exclude',
               '--recursive',
               '--links',
               '--times',
