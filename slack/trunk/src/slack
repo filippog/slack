@@ -23,7 +23,7 @@ use constant LIBEXEC_DIR => '/usr/lib/slack';
 
 # Arguments to pass to each backends (initialized to a hash of empty arrays)
 my %backend_flags = ( map { $_ => [] }
-  qw(getroles sync stage fixfiles preinstall install postinstall)
+  qw(getroles sync stage preinstall fixfiles installfiles postinstall)
 );
 
 my @roles;
@@ -174,7 +174,7 @@ if ($opt{'no-scripts'}) {
   }
 }
 if ($opt{'no-files'}) {
-  push @{$backend_flags{'install'}},
+  push @{$backend_flags{installfiles}},
     '--dry-run';
 }
 # propagate verbosity - 1 to all backends
@@ -281,7 +281,7 @@ for my $role (@roles) {
   # installfiles
   $opt{verbose} and print STDERR "$PROG: install $role\n";
   run_command(LIBEXEC_DIR.'/slack-installfiles',
-    @{$backend_flags{install}}, $role);
+    @{$backend_flags{installfiles}}, $role);
 
   # postinstall
   $opt{verbose} and print STDERR "$PROG: postinstall $role\n";

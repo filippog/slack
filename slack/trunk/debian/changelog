@@ -1,3 +1,10 @@
+slack (0.12.1-1) stable; urgency=low
+
+  * New upstream source (see ChangeLog).
+        fixes bug introduced in 0.11-1 that broke backups
+  
+ -- Alan Sundell <alan@sundell.net>  Thu, 21 Dec 2004 00:20:00 -0800
+
 slack (0.12-1) stable; urgency=low
 
   * New upstream source (see ChangeLog).

@@ -1,3 +1,8 @@
+2004-12-21  Alan Sundell  <alan@sundell.net>
+	* Version 0.12.1
+	* slack: refer to installfiles backend flags consistently --
+		 fixes bug introduced in 0.11 that broke backups
+
 2004-12-03  Alan Sundell  <alan@sundell.net>
 	* Version 0.12
 	* slack: run fixfiles just before installfiles and after preinstall
