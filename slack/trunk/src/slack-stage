@@ -176,7 +176,7 @@ for my $full_role (@ARGV) {
   check_stage();
   while (defined (my $part = shift @role_parts)) {
     push @role, $part;
-    ($opt{verbose} > 0)
+    ($opt{verbose} > 1)
       and print STDERR "$PROG: Calling sync_role for $full_role, @role\n";
     sync_role($full_role, @role);
   }

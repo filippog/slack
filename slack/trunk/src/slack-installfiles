@@ -185,9 +185,17 @@ sub install_files ($) {
   # final / is important for rsync
   my $source = $opt{stage} . "/roles/" . $role . "/files/";
   my $destination = $opt{root} . "/";
-  ($opt{verbose} > 0) and print STDERR "$PROG: Syncing '$source' to '$destination'\n";
   my @command = (@rsync, $source, $destination);
   my ($rsync_pid, $rsync_fh);
+
+  # Try to give some sensible message here
+  if ($opt{verbose} > 0) {
+    if ($opt{'dry-run'}) {
+      print STDERR "$PROG: Dry-run syncing '$source' to '$destination'\n";
+    } else {
+      print STDERR "$PROG: Syncing '$source' to '$destination'\n";
+    }
+  }
 
   # Divide into parent (which will make a list of files to install)
   # and child (which will exec rsync)

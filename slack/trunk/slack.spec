@@ -1,6 +1,6 @@
 Summary: slack configuration management tool
 Name: slack
-Version: 0.10.1
+Version: 0.11
 Release: 1
 License: GPL
 Group: System Environment/Libraries
@@ -48,16 +48,20 @@ if [ $1 = 0 ] ; then
 fi
 
 %changelog
+* Thu Nov 11 2004 Alan Sundell <alan@sundell.net> 0.11-1
+- new upstream source (see ChangeLog)
+    add --no-files and --no-scripts options
+
 * Fri Oct 29 2004 Alan Sundell <alan@sundell.net> 0.10.2-1
-- new upstram source (see ChangeLog)
+- new upstream source (see ChangeLog)
     use the full role name in the stage
 
 * Fri Oct 29 2004 Alan Sundell <alan@sundell.net> 0.10.1-1
-- new upstram source (see ChangeLog)
+- new upstream source (see ChangeLog)
     minor code cleanups
 
 * Fri Oct 22 2004 Alan Sundell <alan@sundell.net> 0.10-1
-- new upstram source (see ChangeLog)
+- new upstream source (see ChangeLog)
     adds a new "staging" step, which elimates the need for .keepme~ files
 
 * Fri Aug 13 2004 Alan Sundell <alan@sundell.net> 0.7-1

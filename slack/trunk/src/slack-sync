@@ -188,7 +188,7 @@ for my $full_role (@ARGV) {
   # Don't bother syncing twice
   next if $already_synced{$base_role};
 
-  ($opt{verbose} > 0)
+  ($opt{verbose} > 1)
     and print STDERR "$PROG: Calling sync_role for $base_role\n";
 
   sync_role($base_role) unless ($already_synced{$base_role});

@@ -55,8 +55,16 @@ Increase verbosity.  Can be specified multiple times.
 \fB\-h\fR, \fB\-\-help\fR
 Print a usage statement.
 .TP
+\fB\-\-no\-files\fR
+Don't install any files in ROOT, but tell rsync to print what it
+would do.
+.TP
+\fB\-\-no\-scripts\fR
+Don't run scripts
+.TP
 \fB\-n\fR, \fB\-\-dry\-run\fR
-Don't write any files to disk -- just report what would have been don.
+Same as \-\-no\-files \-\-no\-scripts  (CACHE, STAGE will still be
+updated)
 .TP
 \fB\-\-role\-list\fR
 Role list for

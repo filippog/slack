@@ -21,10 +21,10 @@ use constant LIBEXEC_DIR => '/usr/lib/slack';
 
 (my $PROG = $0) =~ s#.*/##;
 
-# Arguments to pass to all backends
-my @backend_flags = ();
-# Arguments to pass to slack-installfiles for backup purposes
-my @backup_flags = ();
+# Arguments to pass to each backends (initialized to a hash of empty arrays)
+my %backend_flags = ( map { $_ => [] }
+  qw(getroles sync stage fixfiles preinstall install postinstall)
+);
 
 my @roles;
 
@@ -69,8 +69,15 @@ Options:
   -r, --root  DIR
       Root destination for slack files
 
+  --no-files
+      Don't install any files in ROOT, but tell rsync to print what
+      it would do.
+
+  --no-scripts
+      Don't run scripts
+
   -n, --dry-run
-      Don't write any files to disk -- just report what would have been done.
+      Same as --no-files --no-scripts  (CACHE, STAGE will still be updated)
 
   --role-list
       Role list for slack-getroles
@@ -129,6 +136,8 @@ sub read_config () {
       'backup-dir=s',
       'config|C=s',
       'role-list=s',
+      'no-scripts',
+      'no-files',
       'dry-run|n',
       'source|s=s',
       'cache|c=s',
@@ -153,29 +162,60 @@ die "No source defined!\n\n$usage" unless $opt{source};
 die "No root defined!\n\n$usage" unless $opt{root};
 die "No cache defined!\n\n$usage" unless $opt{cache};
 
-# Pass options along to backends
-if ($command_line_opt{'dry-run'}) {
-  push @backend_flags, '--dry-run';
+# Special options
+if ($opt{'dry-run'}) {
+  $opt{'no-scripts'} = 1;
+  $opt{'no-files'} = 1;
 }
+if ($opt{'no-scripts'}) {
+  for my $action (qw(fixfiles preinstall postinstall)) {
+    push @{$backend_flags{$action}},
+      '--dry-run';
+  }
+}
+if ($opt{'no-files'}) {
+  push @{$backend_flags{'install'}},
+    '--dry-run';
+}
+# propagate verbosity - 1 to all backends
 if ($command_line_opt{'verbose'} > 1) {
-  push @backend_flags, ('--verbose') x ($command_line_opt{'verbose'} - 1);
+  for my $action (keys %backend_flags) {
+    push @{$backend_flags{$action}},
+      ('--verbose') x ($command_line_opt{'verbose'} - 1);
+  }
 }
+# propagate these flags to all the backends
 for my $option (qw(config root cache stage source)) {
   if ($command_line_opt{$option}) {
-    push @backend_flags, "--$option=$command_line_opt{$option}";
+    for my $action (keys %backend_flags) {
+      push @{$backend_flags{$action}},
+        "--$option=$command_line_opt{$option}";
+    }
   }
+}
+# getroles also can take 'role-list'
+if ($command_line_opt{'role-list'}) {
+  push @{$backend_flags{'getroles'}},
+    "--role-list=$command_line_opt{'role-list'}";
+}
+    
+# Figure out a place to put backups
+if ($opt{backup} and $opt{'backup-dir'}) {
+  push @{$backend_flags{installfiles}},
+    '--backup',
+    '--backup-dir='.
+      $opt{'backup-dir'}.
+      "/".
+      strftime('%F-%T', localtime(time))
+    ;
 }
 # }}}
 
 # Get a list of roles to install from slack-getroles {{{
 if (not @ARGV) {
-  my @command = (LIBEXEC_DIR.'/slack-getroles', @backend_flags);
-  # getroles also can take 'role-list'
-  if ($command_line_opt{'role-list'}) {
-    push @command, "--role-list=$command_line_opt{'role-list'}";
-  }
+  my @command = (LIBEXEC_DIR.'/slack-getroles', @{$backend_flags{'getroles'}});
   $opt{verbose} and print STDERR "$PROG: getroles\n";
-  ($opt{verbose} > 1) and print STDERR "$PROG: Calling '@command' to get a list of roles for this host.\n";
+  ($opt{verbose} > 2) and print STDERR "$PROG: Calling '@command' to get a list of roles for this host.\n";
   my ($roles_pid, $roles_fh);
   if ($roles_pid = open($roles_fh, "-|")) {
     # Parent
@@ -216,51 +256,40 @@ for my $role (@roles) {
 }
 # }}}
 
-# Figure out a place to put backups {{{
-if ($opt{backup} and $opt{'backup-dir'}) {
-  push @backup_flags,
-    '--backup',
-    '--backup-dir='.
-      $opt{'backup-dir'}.
-      "/".
-      strftime('%F-%T', localtime(time))
-    ;
-}
-# }}}
-
 $opt{verbose} and print STDERR "$PROG: installing roles: @roles\n";
-# sync all the roles down
+
+# sync all the roles down at once
 $opt{verbose} and print STDERR "$PROG: sync @roles\n";
 run_command(LIBEXEC_DIR.'/slack-sync',
-  @backend_flags, @roles);
+  @{$backend_flags{sync}}, @roles);
 
 for my $role (@roles) {
   # stage
   $opt{verbose} and print STDERR "$PROG: stage $role\n";
   run_command(LIBEXEC_DIR.'/slack-stage',
-    @backend_flags, $role);
+    @{$backend_flags{stage}}, $role);
   # fixfiles
   $opt{verbose} and print STDERR "$PROG: fixfiles $role\n";
   run_command(LIBEXEC_DIR.'/slack-runscript',
-    @backend_flags, 'fixfiles', $role);
+    @{$backend_flags{fixfiles}}, 'fixfiles', $role);
   # preinstall
   $opt{verbose} and print STDERR "$PROG: preinstall $role\n";
   run_command(LIBEXEC_DIR.'/slack-runscript',
-    @backend_flags, 'preinstall', $role);
+    @{$backend_flags{preinstall}}, 'preinstall', $role);
   # installfiles
   $opt{verbose} and print STDERR "$PROG: install $role\n";
   run_command(LIBEXEC_DIR.'/slack-installfiles',
-    @backend_flags, @backup_flags, $role);
+    @{$backend_flags{install}}, $role);
   # postinstall
   $opt{verbose} and print STDERR "$PROG: postinstall $role\n";
   run_command(LIBEXEC_DIR.'/slack-runscript',
-    @backend_flags, 'postinstall', $role);
+    @{$backend_flags{postinstall}}, 'postinstall', $role);
 }
 exit 0;
 
 sub run_command (@) {
   my (@command) = @_;
-  ($opt{verbose} > 1) and print STDERR "$PROG: Calling '@command'\n";
+  ($opt{verbose} > 2) and print STDERR "$PROG: Calling '@command'\n";
   unless (system(@command) == 0) {
     if ($? & 128) {
         die "'@command' dumped core\n";

@@ -1,3 +1,11 @@
+2004-11-11  Alan Sundell  <alan@sundell.net>
+	* Version 0.11
+	* slack: store backend flags separately for each backend
+	* slack: support --no-scripts, --no-files, change -n to just
+		 mean both of those, rather than the pretty useless
+		 "don't do anything, not even refreshing the cache"
+	* [all]: Try to get some sensible output at verbosity level 2
+
 2004-10-29  Alan Sundell  <alan@sundell.net>
 
 	* Version 0.10.2
