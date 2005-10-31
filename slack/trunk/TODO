@@ -1,13 +1,18 @@
 # $Id$
 
 #################
+    logging!
+    don't test for -x on scripts, just -e (making non-executable scripts
+        a fatal error)
+    manpage update:
+        describe order of operations
     just skip syncing if source equals cache.
-    logging
     use an "install" script, if present, instead of built-in
         file install routines
     export dry-run, backup, backup-dir if they exist
     support preview
     function library for shell scripts
+    in RPM, deb, create subdirs of CACHE
 #################
 
 PRE-1.0:
