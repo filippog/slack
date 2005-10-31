@@ -31,7 +31,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
-%config /etc/slack.conf
+%config %{_sysconfdir}/slack.conf
 %{_sbindir}
 %{_libdir}/slack
 %{_mandir}/man5
