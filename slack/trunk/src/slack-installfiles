@@ -75,7 +75,7 @@ unless (-d $opt{root}) {
 if ($opt{backup} and $opt{'backup-dir'}) {
   # Make sure backup directory exists
   unless (-d $opt{'backup-dir'}) {
-    ($opt{verbose} > 0) and print STDERR "Creating backup directory '$opt{'backup-dir'}'\n";
+    ($opt{verbose} > 0) and print STDERR "$PROG: Creating backup directory '$opt{'backup-dir'}'\n";
     if (not $opt{'dry-run'}) {
       eval { mkpath($opt{'backup-dir'}); };
       die "Could not mkpath backup dir '$opt{'backup-dir'}': $@\n" if $@;
