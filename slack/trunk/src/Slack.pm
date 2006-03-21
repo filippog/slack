@@ -15,6 +15,8 @@ $VERSION = '0.1';
 
 $DEFAULT_CONFIG_FILE = '/etc/slack.conf';
 
+my $term;
+
 my @default_options = (
     'help|h|?',
     'verbose|v+',
@@ -129,7 +131,9 @@ sub read_config (%) {
   return $arg{opthash};
 }
 
-sub check_system_exit (@) {
+# Just get the exit code from a command that failed.
+# croaks if anything weird happened.
+sub get_system_exit (@) {
   my @command = @_;
   if ($? & 128) {
     croak "'@command' dumped core";
@@ -137,13 +141,19 @@ sub check_system_exit (@) {
   if (my $sig = $? & 127) {
     croak "'@command' caught sig $sig";
   }
-  if (my $exit = $? >> 8) {
-    croak "'@command' exited $exit";
-  }
+  my $exit = $? >> 8;
+  return $exit if $exit;
   if ($!) {
     croak "Syserr on system '@command': $!";
   }
   croak "Unknown error on '@command'";
+}
+
+sub check_system_exit (@) {
+  my @command = @_;
+  my $exit = get_system_exit(@command);
+  # Exit is non-zero if get_system_exit() didn't croak.
+  croak "'@command' exited $exit";
 }
 
 # get options from the command line and the config file
@@ -239,5 +249,15 @@ sub get_options {
 
   return $arg{opthash};
 }
+
+sub prompt ($) {
+  my ($prompt) = @_;
+  if (not defined $term) {
+    require Term::ReadLine;
+    $term = new Term::ReadLine 'slack'
+  }
+
+  $term->readline($prompt);
+};
 
 1;
