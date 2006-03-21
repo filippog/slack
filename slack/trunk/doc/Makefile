@@ -7,6 +7,8 @@ all:
 install: install-man
 
 install-man: all
+	$(MKDIR) $(DESTDIR)$(mandir)/man1
+	$(INSTALL) slack-diff.1 $(DESTDIR)$(mandir)/man1
 	$(MKDIR) $(DESTDIR)$(mandir)/man5
 	$(INSTALL) slack.conf.5 $(DESTDIR)$(mandir)/man5
 	$(MKDIR) $(DESTDIR)$(mandir)/man8
