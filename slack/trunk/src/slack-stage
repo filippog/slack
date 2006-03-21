@@ -30,8 +30,8 @@ my @rsync = ('rsync',
 (my $PROG = $0) =~ s#.*/##;
 
 sub check_stage ();
-sub sync_role ($@);
-sub apply_default_perms_to_role ($);
+sub sync_role ($$@);
+sub apply_default_perms_to_role ($$);
 
 ########################################
 # Environment
@@ -48,16 +48,34 @@ select((select(STDERR), $|=1)[0]);
 ########################################
 # Config and option parsing {{{
 my $usage = Slack::default_usage("$PROG [options] <role> [<role>...]");
+$usage .= <<EOF;
+
+  --subdir DIR
+      Sync this subdir only.  Possible values for DIR are 'files' and
+      'scripts'.
+EOF
 # Option defaults
 my %opt = ();
 Slack::get_options(
   opthash => \%opt,
+  command_line_options => [
+    'subdir=s',
+  ],
   usage => $usage,
   required_options => [ qw(cache stage) ],
 );
 
 # Arguments are required
 die "No roles given!\n\n$usage" unless @ARGV;
+
+# We only allow certain values for this option
+if ($opt{subdir}) {
+  unless ($opt{subdir} eq 'files' or $opt{subdir} eq 'scripts') {
+    die "--subdir option must be 'files' or 'scripts'\n\n$usage";
+  }
+} else {
+  $opt{subdir} = '';
+}
 
 # Prepare for backups
 if ($opt{backup} and $opt{'backup-dir'}) {
@@ -86,19 +104,40 @@ if ($opt{'verbose'} > 1) {
 for my $full_role (@ARGV) {
   # Split the full role (e.g. google.foogle.woogle) into components
   my @role_parts = split(/\./, $full_role);
+  die "Internal error: Expect at least one role part" if not @role_parts;
   # Reassemble parts one at a time onto @role and sync as we go,
   # so we do "google", then "google.foogle", then "google.foogle.woogle"
   my @role = ();
   # Make sure we've got the right perms before we copy stuff down
   check_stage();
-  while (defined (my $part = shift @role_parts)) {
-    push @role, $part;
-    ($opt{verbose} > 1)
-      and print STDERR "$PROG: Calling sync_role for $full_role, @role\n";
-    sync_role($full_role, @role);
+
+  # For the base role, do both files and scripts.
+  push @role, shift @role_parts;
+  for my $subdir(qw(files scripts)) {
+    if (not $opt{subdir} or $opt{subdir} eq $subdir) {
+      ($opt{verbose} > 1)
+        and print STDERR "$PROG: Calling sync_role for $full_role, @role\n";
+      # @role here will have one element, so sync_role will use --delete
+      sync_role($full_role, $subdir, @role)
+    }
   }
 
-  apply_default_perms_to_role($full_role);
+  # For all subroles, just do the files.
+  # (If we wanted script subroles to work like files, we'd get rid of this
+  # distinction and simplify the code.)
+  if (not $opt{subdir} or $opt{subdir} eq 'files') {
+    while (@role_parts) {
+      push @role, shift @role_parts;
+      ($opt{verbose} > 1)
+        and print STDERR "$PROG: Calling sync_role for $full_role, @role\n";
+      sync_role($full_role, 'files', @role);
+    }
+  }
+
+  for my $subdir (qw(files scripts)) {
+    apply_default_perms_to_role($full_role, $subdir)
+      if (not $opt{subdir} or $opt{subdir} eq $subdir);
+  }
 }
 exit 0;
 
@@ -125,22 +164,12 @@ sub check_stage () {
 }
 
 # Copy the files for a role from CACHE to STAGE
-sub sync_role ($@) {
-  my ($full_role, @role) = @_;
-  my @subdirs;
+sub sync_role ($$@) {
+  my ($full_role, $subdir, @role) = @_;
   my @this_rsync = @rsync;
 
   # If we were only given one role part, we're in the base role
   my $in_base_role = (scalar @role == 1);
-
-  # For the base role, do both files and scripts.
-  # For all subroles, just do the files.
-  # (If we wanted script subroles to work like files, we'd get rid of this)
-  if ($in_base_role) {
-    @subdirs = qw(files scripts);
-  } else {
-    @subdirs = qw(files);
-  }
 
   # For the base role, delete any files that don't exist in the cache.
   # Not for the subrole (otherwise we'll delete all files not in
@@ -149,72 +178,82 @@ sub sync_role ($@) {
     push @this_rsync, "--delete";
   }
 
-  for my $subdir (@subdirs) {
-    # (a)     => a/files 
-    # (a,b,c) => a/files.b.c
-    my $src_path = $role[0].'/'.join(".", $subdir, @role[1 .. $#role]);
-    # This one's a little simpler:
-    my $dst_path = $full_role.'/'.$subdir;
+  # (a)     => a/files 
+  # (a,b,c) => a/files.b.c
+  my $src_path = $role[0].'/'.join(".", $subdir, @role[1 .. $#role]);
+  # This one's a little simpler:
+  my $dst_path = $full_role.'/'.$subdir;
 
-    # final / is important for rsync
-    my $source = $opt{cache} . "/roles/" . $src_path . "/";
-    my $destination = $opt{stage} . "/roles/" . $dst_path . "/";
-    if (not -d $destination and -d $source) {
-        ($opt{verbose} > 0) and print STDERR "$PROG: Creating '$destination'\n";
-        if (not $opt{'dry-run'}) {
-          eval { mkpath($destination); };
-          die "Could not mkpath stage dir '$destination': $@\n" if $@;
-        }
-    }
-
-    # We no longer require the source to exist
-    if (not -d $source) {
-      # but we need to remove the destination if the source
-      # doesn't exist and we're in the base role
-      if ($in_base_role) {
-        rmtree($destination);
-        # rmtree() doesn't throw exceptions or give a return value useful
-        # for detecting failure, so we just check after the fact.
-        die "Could not rmtree '$destination' when '$source' missing\n"
-          if -e $destination;
+  # final / is important for rsync
+  my $source = $opt{cache} . "/roles/" . $src_path . "/";
+  my $destination = $opt{stage} . "/roles/" . $dst_path . "/";
+  if (not -d $destination and -d $source) {
+      ($opt{verbose} > 0) and print STDERR "$PROG: Creating '$destination'\n";
+      if (not $opt{'dry-run'}) {
+        eval { mkpath($destination); };
+        die "Could not mkpath stage dir '$destination': $@\n" if $@;
       }
-      # if we continue, rsync will fail because source is missing,
-      # so we don't.
-      next;
-    }
+  }
 
-    # All this to run an rsync command
-    my @command = (@this_rsync, $source, $destination);
-    ($opt{verbose} > 0) and print STDERR "$PROG: Syncing $src_path with '@command'\n";
-    my ($rsync_pid);
-    if ($rsync_pid = fork) {
-      # Parent
-    } elsif (defined $rsync_pid) {
-      # Child
-      open(STDIN, "<", "/dev/null")
-        or die "Could not redirect STDIN from /dev/null\n";
-      # This redirection is necessary because rsync sends
-      #   verbose output to STDOUT
-      open(STDOUT, ">&STDERR")
-        or die "Could not redirect STDOUT to STDERR\n";
-      exec(@command);
-      die "Could not exec '@command': $!\n";
-    } else {
-      die "Could not fork: $!\n";
+  # We no longer require the source to exist
+  if (not -d $source) {
+    # but we need to remove the destination if the source
+    # doesn't exist and we're in the base role
+    if ($in_base_role) {
+      rmtree($destination);
+      # rmtree() doesn't throw exceptions or give a return value useful
+      # for detecting failure, so we just check after the fact.
+      die "Could not rmtree '$destination' when '$source' missing\n"
+        if -e $destination;
     }
-    my $kid = waitpid($rsync_pid, 0);
-    if ($kid != $rsync_pid) {
-      die "waitpid returned $kid\n";
-    } elsif ($?) {
-      Slack::check_system_exit(@command);
-    }
+    # if we continue, rsync will fail because source is missing,
+    # so we don't.
+    return;
+  }
+
+  # All this to run an rsync command
+  my @command = (@this_rsync, $source, $destination);
+  ($opt{verbose} > 0) and print STDERR "$PROG: Syncing $src_path with '@command'\n";
+  my ($rsync_pid);
+  if ($rsync_pid = fork) {
+    # Parent
+  } elsif (defined $rsync_pid) {
+    # Child
+    open(STDIN, "<", "/dev/null")
+      or die "Could not redirect STDIN from /dev/null\n";
+    # This redirection is necessary because rsync sends
+    #   verbose output to STDOUT
+    open(STDOUT, ">&STDERR")
+      or die "Could not redirect STDOUT to STDERR\n";
+    exec(@command);
+    die "Could not exec '@command': $!\n";
+  } else {
+    die "Could not fork: $!\n";
+  }
+  my $kid = waitpid($rsync_pid, 0);
+  if ($kid != $rsync_pid) {
+    die "waitpid returned $kid\n";
+  } elsif ($?) {
+    Slack::check_system_exit(@command);
   }
 }
 
-# This just takes the base role, and chmods everything under it
-sub apply_default_perms_to_role ($) {
-  my ($role) = @_;
+# This just takes the base role, and chowns/chmods everything under it to
+# give it some sensible permissions.  Basically, the only thing we preserve
+# about the original permissions is the executable bit, since that's the
+# only thing source code controls systems like CVS, RCS, Perforce seem to
+# preserve.
+sub apply_default_perms_to_role ($$) {
+  my ($role, $subdir) = @_;
   my $destination = $opt{stage} . "/roles/" . $role;
+
+  if ($subdir) {
+    $destination .= '/' . $subdir;
+  }
+
+  # If the destination doesn't exist, it's probably because the source didn't
+  return if not -d $destination;
+
   ($opt{verbose} > 0) and print STDERR "$PROG: Setting default perms on $destination\n";
   if ($> != 0) {
     warn "WARNING[$PROG]: Not superuser; won't be able to chown files\n";
