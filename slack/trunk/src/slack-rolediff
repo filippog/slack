@@ -1,0 +1,118 @@
+#!/usr/bin/perl -w
+# $Id$
+# vim:sw=2
+# vim600:fdm=marker
+
+# This script provides a preview of scripts or files about to be installed.
+# Basically, it calls diff -- its smarts are in knowing where things are.
+
+require 5.006;
+use warnings FATAL => qw(all);
+use strict;
+use sigtrap qw(die untrapped normal-signals
+               stack-trace any error-signals);
+
+use File::Path;
+use File::Find;
+
+use constant LIB_DIR => '/usr/lib/slack';
+use lib LIB_DIR;
+use Slack;
+
+my @diff = ('diff',
+              '-urN',
+              );
+
+# directories to compare
+my %subdir = (
+  files => 1,
+  scripts => 1,
+);
+
+(my $PROG = $0) =~ s#.*/##;
+
+sub diff ($$);
+
+########################################
+# Environment
+# Helpful prefix to die messages
+$SIG{__DIE__} = sub { die "FATAL[$PROG]: @_"; };
+# Set a reasonable umask
+umask 077;
+# Get out of wherever (possibly NFS-mounted) we were
+chdir("/")
+  or die "Could not chdir /: $!";
+# Autoflush on STDERR
+select((select(STDERR), $|=1)[0]);
+
+########################################
+# Config and option parsing {{{
+my $usage = Slack::default_usage("$PROG [options] <role> [<role>...]");
+$usage .= <<EOF;
+
+  --subdir DIR
+      Check this subdir only.  Possible values for DIR are 'files' and
+      'scripts'.
+EOF
+# Option defaults
+my %opt = ();
+Slack::get_options(
+  opthash => \%opt,
+  command_line_options => [
+    'subdir=s',
+  ],
+  usage => $usage,
+  required_options => [ qw(cache stage root) ],
+);
+
+# Arguments are required
+die "No roles given!\n\n$usage" unless @ARGV;
+
+# We only allow certain values for this option
+if ($opt{subdir}) {
+  unless ($opt{subdir} eq 'files' or $opt{subdir} eq 'scripts') {
+    die "--subdir option must be 'files' or 'scripts'\n\n$usage";
+  }
+  # Only do this subdir
+  %subdir = ( $opt{subdir} => 1 );
+}
+
+# }}}
+
+my $exit;
+# Do the diffs
+for my $full_role (@ARGV) {
+  # Split the full role (e.g. google.foogle.woogle) into components
+  my @role = split(/\./, $full_role);
+
+  if ($subdir{scripts}) {
+    # Then we compare the cache vs the stage
+    my $old = $opt{stage} . "/roles/" . $full_role . "/scripts";
+    my $new = $opt{cache} . "/roles/" . $role[0] . "/scripts";
+    $exit |= diff($old, $new);
+  }
+
+  if ($subdir{files}) {
+    # Then we compare the stage vs the root
+    my $old = $opt{root};
+    my $new = $opt{stage} . "/roles/" . $full_role . "/files";
+    $exit |= diff($old, $new);
+  }
+}
+exit $exit;
+
+sub diff ($$) {
+  my ($old, $new) = @_;
+
+  my @command = (@diff, $old, $new);
+
+  # return if there's nothing to do
+  return if (not -d $old and not -d $new);
+
+  ($opt{verbose} > 0) and print STDERR "$PROG: Previewing with '@command'\n";
+  if (system(@command) == 0) {
+    return 0;
+  } else {
+    return Slack::get_system_exit(@command);
+  }
+}
