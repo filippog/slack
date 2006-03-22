@@ -22,7 +22,7 @@ use lib LIB_DIR;
 use Slack;
 
 sub run_backend(@);
-sub run_conditional_backend(@);
+sub run_conditional_backend($@);
 
 (my $PROG = $0) =~ s#.*/##;
 
@@ -70,6 +70,9 @@ $usage .= <<EOF;
   --libexec-dir DIR
       Look for backend scripts in this directory.
 
+  --diff PROG
+      Use this diff program for previews
+
 EOF
 
 # Options
@@ -79,13 +82,13 @@ my %command_line_opt = ();
 Slack::get_options(
   opthash => \%opt,
   command_line_options => [
-    'preview|p', # FIXME: make this take an optional mode
+    'preview|p:s',
     'role-list=s',
     'no-scripts|noscripts',
     'no-files|nofiles',
     'no-sync|nosync',
     'libexec-dir=s',
-    'slack-diff=s',
+    'diff=s',
   ],
   required_options => [ qw(source cache stage root) ],
   command_line_hash => \%command_line_opt,
@@ -136,11 +139,22 @@ if (not defined $opt{'libexec-dir'}) {
   $opt{'libexec-dir'} = LIBEXEC_DIR;
 }
 
-# Reasonable default diff for previewing
-# FIXME: probably want to use slack-diff here
-# FIXME: We're not actually passing this to slack-preview.
-if (not defined $opt{'slack-diff'}) {
-  $opt{'slack-diff'} = 'diff -urN --unidirectional-new-file';
+# Pass diff option along to slack-preview
+if ($opt{'diff'}) {
+  push @{$backend_flags{preview}},
+    "--diff=$opt{'diff'}";
+}
+
+# Preview takes an optional argument.  If no argument is given,
+# it gets "" from getopt.
+if (defined $opt{'preview'}) {
+  if ($opt{'preview'} eq '') {
+    $opt{'preview'} = 'simple';
+  } else {
+    if (not grep /^$opt{'preview'}$/, qw(simple prompt)) {
+      die "Unknown preview mode '$opt{'preview'}'!";
+    }
+  }
 }
     
 # The backup option defaults to on if it wasn't specified
@@ -210,13 +224,15 @@ for my $role (@roles) {
     @{$backend_flags{stage}}, '--subdir=files', $role);
   
   if ($opt{preview}) {
+    my $prompt = ($opt{preview} eq 'prompt');
+      
     # diff stage/scripts cache/scripts
     $opt{verbose} and print STDERR "$PROG: preview scripts $role\n";
-    run_conditional_backend('slack-preview',
+    run_conditional_backend($prompt, 'slack-preview',
       @{$backend_flags{preview}}, '--subdir=scripts', $role);
     # diff root          stage/files
     $opt{verbose} and print STDERR "$PROG: preview files $role\n";
-    run_conditional_backend('slack-preview',
+    run_conditional_backend($prompt, 'slack-preview',
       @{$backend_flags{preview}}, '--subdir=files', $role);
     # FIXME:  We probably want to exit here (and not prompt above)
     # in the simple case.
@@ -262,8 +278,8 @@ sub run_backend (@) {
   }
 }
 
-sub run_conditional_backend (@) {
-  my ($backend, @args) = @_;
+sub run_conditional_backend ($@) {
+  my ($prompt, $backend, @args) = @_;
   # If we weren't given an explicit path, prepend the libexec dir
   unless ($backend =~ m#^/#) {
     $backend = $opt{'libexec-dir'} . '/' . $backend;
@@ -273,6 +289,8 @@ sub run_conditional_backend (@) {
   my (@command) = ($backend, @args);
   ($opt{verbose} > 2) and print STDERR "$PROG: Calling '@command'\n";
   unless (system(@command) == 0) {
-    exit 1 unless Slack::prompt("Continue? [yN] ") eq 'y';
+    if ($prompt) {
+      exit 1 unless Slack::prompt("Continue? [yN] ") eq 'y';
+    }
   }
 }
