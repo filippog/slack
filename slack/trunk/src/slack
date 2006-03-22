@@ -234,8 +234,9 @@ for my $role (@roles) {
     $opt{verbose} and print STDERR "$PROG: preview files $role\n";
     run_conditional_backend($prompt, 'slack-preview',
       @{$backend_flags{preview}}, '--subdir=files', $role);
-    # FIXME:  We probably want to exit here (and not prompt above)
-    # in the simple case.
+
+    # If we're not prompting, just exit
+    exit if $prompt == 0;
   }
 
   $opt{verbose} and print STDERR "$PROG: stage scripts $role\n";
