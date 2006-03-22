@@ -53,6 +53,9 @@ $usage .= <<EOF;
   --subdir DIR
       Check this subdir only.  Possible values for DIR are 'files' and
       'scripts'.
+
+  --diff PROG
+      Use this program to do diffs.  [@diff]
 EOF
 # Option defaults
 my %opt = ();
@@ -60,6 +63,7 @@ Slack::get_options(
   opthash => \%opt,
   command_line_options => [
     'subdir=s',
+    'diff=s',
   ],
   usage => $usage,
   required_options => [ qw(cache stage root) ],
@@ -75,6 +79,11 @@ if ($opt{subdir}) {
   }
   # Only do this subdir
   %subdir = ( $opt{subdir} => 1 );
+}
+
+# Let people override our diff.  Split on spaces so they can pass args.
+if ($opt{diff}) {
+  @diff = split(/\s+/, $opt{diff});
 }
 
 # }}}
