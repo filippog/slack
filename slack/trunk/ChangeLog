@@ -1,3 +1,8 @@
+2006-03-21  Alan Sundell  <alan@sundell.net>
+	* slack-diff: new diffing tool
+	* slack-preview: new slack backend for diffing tool
+	* slack-stage: allow specifying a subdir (files/script) to stage
+
 2005-10-30  Alan Sundell  <alan@sundell.net>
 	* slack.spec: expect slack.conf in sysconfdir (since that's where
 	    we install it)
