@@ -19,8 +19,9 @@ use constant LIB_DIR => '/usr/lib/slack';
 use lib LIB_DIR;
 use Slack;
 
-my @diff = ('diff',
+my @diff = ('slack-diff',
               '-urN',
+              '--unidirectional-new-file',
               );
 
 # directories to compare
@@ -88,7 +89,7 @@ if ($opt{diff}) {
 
 # }}}
 
-my $exit;
+my $exit = 0;
 # Do the diffs
 for my $full_role (@ARGV) {
   # Split the full role (e.g. google.foogle.woogle) into components
@@ -116,7 +117,7 @@ sub diff ($$) {
   my @command = (@diff, $old, $new);
 
   # return if there's nothing to do
-  return if (not -d $old and not -d $new);
+  return 0 if (not -d $old and not -d $new);
 
   ($opt{verbose} > 0) and print STDERR "$PROG: Previewing with '@command'\n";
   if (system(@command) == 0) {
