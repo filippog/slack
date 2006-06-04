@@ -1,3 +1,9 @@
+slack-master (0.4-1) stable; urgency=low
+
+  * Prune removed files from repository
+
+ -- Alan Sundell <alan@sundell.net>  Sat, 03 Jun 2006 18:43:00 -0700
+
 slack-master (0.3-1) stable; urgency=low
 
   * Move slack-update-source to /usr/sbin
