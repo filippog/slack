@@ -1,3 +1,8 @@
+2006-09-21  Alan Sundell  <alan@sundell.net>
+	* COPYING, GPL, CREDITS: add license, attribution
+	* README: lots of new text about slack
+	* slack-installfiles: when creating ROOT, make it mode 0755
+
 2006-03-21  Alan Sundell  <alan@sundell.net>
 	* slack-diff: new diffing tool
 	* slack-preview: new slack backend for diffing tool
