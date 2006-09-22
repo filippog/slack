@@ -65,7 +65,12 @@ die "No roles given!\n\n$usage" unless @ARGV;
 
 unless (-d $opt{root}) {
     if (not $opt{'dry-run'}) {
-      eval { mkpath($opt{root}); };
+      eval {
+        mkpath($opt{root});
+        # We have a tight umask, and a root of mode 0700 would be undesirable
+        # in most cases.
+        chmod(0755, $opt{root});
+      };
       die "Could not mkpath destination directory '$opt{root}': $@\n" if $@;
     }
     warn "WARNING[$PROG]: Created destination directory '".$opt{root}."'\n";
