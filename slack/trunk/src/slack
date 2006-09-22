@@ -217,7 +217,7 @@ unless ($opt{'no-sync'}) {
     @{$backend_flags{sync}}, @roles);
 }
 
-for my $role (@roles) {
+ROLE: for my $role (@roles) {
   # stage
   $opt{verbose} and print STDERR "$PROG: stage files $role\n";
   run_backend('slack-stage',
@@ -226,17 +226,13 @@ for my $role (@roles) {
   if ($opt{preview}) {
     my $prompt = ($opt{preview} eq 'prompt');
       
-    # diff stage/scripts cache/scripts
-    $opt{verbose} and print STDERR "$PROG: preview scripts $role\n";
+    # Give a diff
+    $opt{verbose} and print STDERR "$PROG: preview $role\n";
     run_conditional_backend($prompt, 'slack-preview',
-      @{$backend_flags{preview}}, '--subdir=scripts', $role);
-    # diff root          stage/files
-    $opt{verbose} and print STDERR "$PROG: preview files $role\n";
-    run_conditional_backend($prompt, 'slack-preview',
-      @{$backend_flags{preview}}, '--subdir=files', $role);
+      @{$backend_flags{preview}}, $role);
 
-    # If we're not prompting, just exit
-    exit if $prompt == 0;
+    # In the simple mode, we just move along after showing the diff
+    next ROLE if $opt{preview} eq 'simple';
   }
 
   $opt{verbose} and print STDERR "$PROG: stage scripts $role\n";
@@ -290,8 +286,17 @@ sub run_conditional_backend ($@) {
   my (@command) = ($backend, @args);
   ($opt{verbose} > 2) and print STDERR "$PROG: Calling '@command'\n";
   unless (system(@command) == 0) {
-    if ($prompt) {
-      exit 1 unless Slack::prompt("Continue? [yN] ") eq 'y';
+    my $exit = Slack::get_system_exit(@command);
+
+    if ($exit == 1) {
+      # exit 1 means a difference found or something normal that requires
+      # a prompt before continuing.
+      if ($prompt) {
+        exit 1 unless Slack::prompt("Continue? [yN] ") eq 'y';
+      }
+    } else {
+      # any other non-successful exit is a serious error.
+      die "'@command' exited $exit";
     }
   }
 }
