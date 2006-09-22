@@ -51,6 +51,7 @@ binary-indep:	checkroot build
 	-rm -rf debian/tmp
 	$(INSTALL_DIR) 	debian/tmp \
 			debian/tmp/DEBIAN \
+			debian/tmp/usr/bin \
 			debian/tmp/usr/sbin \
 			debian/tmp/usr/share/doc/slack \
 			debian/tmp/usr/lib/slack \
