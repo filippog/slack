@@ -21,7 +21,6 @@ use Slack;
 
 my @diff = ('slack-diff',
               '-urN',
-              '--unidirectional-new-file',
               );
 
 # directories to compare
@@ -32,7 +31,7 @@ my %subdir = (
 
 (my $PROG = $0) =~ s#.*/##;
 
-sub diff ($$);
+sub diff ($$;@);
 
 ########################################
 # Environment
@@ -99,22 +98,25 @@ for my $full_role (@ARGV) {
     # Then we compare the cache vs the stage
     my $old = $opt{stage} . "/roles/" . $full_role . "/scripts";
     my $new = $opt{cache} . "/roles/" . $role[0] . "/scripts";
-    $exit |= diff($old, $new);
+    # For scripts, we don't care so much about mode and owner (since those are
+    # inherited in the CACHE from the SOURCE), so --noperms.
+    $exit |= diff($old, $new, '--noperms');
   }
 
   if ($subdir{files}) {
     # Then we compare the stage vs the root
     my $old = $opt{root};
     my $new = $opt{stage} . "/roles/" . $full_role . "/files";
-    $exit |= diff($old, $new);
+    # For files, we don't care about files that exist in $old but not $new
+    $exit |= diff($old, $new, '--unidirectional-new-file');
   }
 }
 exit $exit;
 
-sub diff ($$) {
-  my ($old, $new) = @_;
+sub diff ($$;@) {
+  my ($old, $new, @options) = @_;
 
-  my @command = (@diff, $old, $new);
+  my @command = (@diff, @options, $old, $new);
 
   # return if there's nothing to do
   return 0 if (not -d $old and not -d $new);
