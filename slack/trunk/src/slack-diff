@@ -44,9 +44,10 @@ select((select(STDERR), $|=1)[0]);
 
 # Default options
 my %opt = (
-  fakediff => 1,
+  fakediff   => 1,
+  perms      => 1,
   'new-file' => 1,
-  diff     => 'diff',
+  diff       => 'diff',
 );
 
 # Config and option parsing
@@ -62,6 +63,9 @@ Options:
   --fakediff
       Make a fake diff for file modes and other things that are not file
       contents.  Default is on, can be disabled with --nofakediff.
+  --perms
+      Care about owner, group, and permissions when doing fakediff.
+      Default is on, can be disabled with --noperms.
   -r, --recursive
       Recursively compare directories.
   -N, --new-file
@@ -104,6 +108,7 @@ EOF
     'from-file',
     'unidirectional-new-file',
     'fakediff!',
+    'perms!',
     'diff=s',
     ) or die $usage;
   if ($opt{help}) {
@@ -176,42 +181,47 @@ sub recursive_compare ($$) {
   my (%seen);
 
   $retval = 0;
-  $basere = qr(^$newdir);
-  $wanted = sub {
-    my ($newfile) = $_;
-    my $oldfile = $newfile;
 
-    $oldfile =~ s#$basere#$olddir#;
-    $seen{$oldfile} = 1;
-    $retval |= compare_files($oldfile, $newfile);
-  };
+  if (-d $newdir) {
+    $basere = qr(^$newdir);
+    $wanted = sub {
+      my ($newfile) = $_;
+      my $oldfile = $newfile;
 
-  eval { find({ wanted => $wanted , no_chdir => 1}, $newdir) };
-  if ($@) {
-    warn "$PROG: error during find: $@\n";
-    $retval |= 2;
+      $oldfile =~ s#$basere#$olddir#;
+      $seen{$oldfile} = 1;
+      $retval |= compare_files($oldfile, $newfile);
+    };
+
+    eval { find({ wanted => $wanted , no_chdir => 1}, $newdir) };
+    if ($@) {
+      warn "$PROG: error during find: $@\n";
+      $retval |= 2;
+    }
   }
   return $retval
     if $opt{'unidirectional-new-file'};
 
   # If we're not unidirectional, we want to go through the old directory
   # and diff any files we didn't see in the newdir.
-  $basere = qr(^$olddir);
-  $wanted = sub {
-    my ($oldfile) = $_;
-    my $newfile;
+  if (-d $olddir) {
+    $basere = qr(^$olddir);
+    $wanted = sub {
+      my ($oldfile) = $_;
+      my $newfile;
 
-    return if $seen{$oldfile};
-    $newfile = $oldfile;
+      return if $seen{$oldfile};
+      $newfile = $oldfile;
 
-    $newfile =~ s#$basere#$newdir#;
-    $retval |= compare_files($oldfile, $newfile);
-  };
+      $newfile =~ s#$basere#$newdir#;
+      $retval |= compare_files($oldfile, $newfile);
+    };
 
-  eval { find({ wanted => $wanted , no_chdir => 1}, $olddir) };
-  if ($@) {
-    warn "$PROG: error during find: $@\n";
-    $retval |= 2;
+    eval { find({ wanted => $wanted , no_chdir => 1}, $olddir) };
+    if ($@) {
+      warn "$PROG: error during find: $@\n";
+      $retval |= 2;
+    }
   }
   return $retval;
 }
@@ -304,7 +314,7 @@ sub compare_files ($$) {
         $return = 1;
       }
     } 
-    if ($old->uid != $new->uid) {
+    if ($old->uid != $new->uid and $opt{perms}) {
       if ($opt{fakediff}) {
         fakediff('uid',
           $oldname => $old->uid,
@@ -317,7 +327,7 @@ sub compare_files ($$) {
       }
       $return = 1;
     } 
-    if ($old->gid != $new->gid) {
+    if ($old->gid != $new->gid and $opt{perms}) {
       if ($opt{fakediff}) {
         fakediff('gid',
           $oldname => $old->gid,
@@ -330,7 +340,7 @@ sub compare_files ($$) {
       }
       $return = 1;
     }
-    if (S_IMODE($old->mode) != S_IMODE($new->mode)) {
+    if (S_IMODE($old->mode) != S_IMODE($new->mode) and $opt{perms}) {
       if ($opt{fakediff}) {
         fakediff('mode',
           $oldname => sprintf('%04o', S_IMODE($old->mode)),
