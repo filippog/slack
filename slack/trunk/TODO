@@ -1,6 +1,15 @@
 # $Id$
 
+make run_backend() do the printing to stderr and dereferencing backend flags
+
+write unit tests for slack-stage changes (--subdir support)
+write unit tests for slack-diff
+
+reorganize TODO file
+
 #################
+    clean up debian/rules (use some dh_*, man!)
+    add --version option
     logging!
     don't test for -x on scripts, just -e (making non-executable scripts
         a fatal error)
@@ -11,6 +20,7 @@
         file install routines
     export dry-run, backup, backup-dir if they exist
     support preview
+        add a flag to run script in preview with a dry-run flag or env
     function library for shell scripts
     in RPM, deb, create subdirs of CACHE
 #################
@@ -57,3 +67,7 @@ LATER:
   have been modified and upload them to repository, so people
   can be *really* lazy.
 * Locking to prevent concurrent writes
+
+* something like rpm -ql, -qf to show/query files in a role (just from files
+    dir)
+* use a tarball as a source (possibly fetched with wget)
