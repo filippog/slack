@@ -1,5 +1,9 @@
-# vim:sw=2
 # $Id$
+# vim:sw=2
+# vim600:fdm=marker
+# Copyright (C) 2004-2006 Alan Sundell <alan@sundell.net>
+# All Rights Reserved.  This program comes with ABSOLUTELY NO WARRANTY.
+# See the file COPYING for details.
 
 package Slack;
 

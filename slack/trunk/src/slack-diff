@@ -1,6 +1,10 @@
 #!/usr/bin/perl -w
+# $Id$
 # vim:sw=2
 # vim600:fdm=marker
+# Copyright (C) 2004-2006 Alan Sundell <alan@sundell.net>
+# All Rights Reserved.  This program comes with ABSOLUTELY NO WARRANTY.
+# See the file COPYING for details.
 #
 # This script is a wrapper for diff that gives output about special files
 # and file modes. (diff can only compare regular files)
