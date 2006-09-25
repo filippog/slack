@@ -139,7 +139,7 @@ if (not defined $opt{'libexec-dir'}) {
   $opt{'libexec-dir'} = LIBEXEC_DIR;
 }
 
-# Pass diff option along to slack-preview
+# Pass diff option along to slack-rolediff
 if ($opt{'diff'}) {
   push @{$backend_flags{preview}},
     "--diff=$opt{'diff'}";
@@ -228,7 +228,7 @@ ROLE: for my $role (@roles) {
       
     # Give a diff
     $opt{verbose} and print STDERR "$PROG: preview $role\n";
-    run_conditional_backend($prompt, 'slack-preview',
+    run_conditional_backend($prompt, 'slack-rolediff',
       @{$backend_flags{preview}}, $role);
 
     # In the simple mode, we just move along after showing the diff
