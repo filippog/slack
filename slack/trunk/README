@@ -1,133 +1,24 @@
-slack is a configuration management system designed to appeal to lazy admins
-(like me).  It's an evolution from the usual "put files in some central
-directory" that is faily common practice.  It's descended from an earlier
-system I also wrote, called "subsets", and uses a multi-stage rsync to fix
-some of the problems I had there.
+Short Description:
 
-Basically, it's a glorified wrapper around rsync.
+  slack is a configuration management system designed to appeal to lazy
+  admins (like me).  It's an evolution from the usual "put files in some
+  central directory" that is faily common practice.  It's descended from an
+  earlier system I also wrote, called "subsets", and uses a multi-stage
+  rsync to fix some of the problems I had there.
 
-So, on with the glorification.
+  Basically, it's a glorified wrapper around rsync.
 
-OVERVIEW:
+License:
+  See the file COPYING.
 
-slack copies a set files down from a central repository onto your local
-machine, and it lets you write some scripts to run before and after doing
-installing the files.
+Getting slack:
+  http://www.sundell.net/~alan/projects/slack/
 
-slack doesn't care about file conflicts, and it can't uninstall things.
-It places no limitations on your scripts (it just exec()s them, so
-technically they could be binaries), so it has absolutely no idea what
-they will do (I haven't invented the parallel universe simulator yet to
-see how the world will react to the actions of your scripts).
+Documentation:
+  Not much, but there's some in doc/
 
-Each set of files and scripts is called a "role".  Several roles can be
-installed on one machine.  You can also have "subroles" inside a role, which
-sort of get overlaid on top of the base role, but more about that later.
+Reporting problems:
+  Send an email to <sundell@gmail.com>.  Probably want to put
+  "slack" in the subject and be patient for replies. :)
 
-The roles all live together in the "slack repository."  Generally, you
-want to put this on some central server(s), backed by some sort of
-source control repository, but slack just needs a directory somewhere.
-
-You can configure which roles live on a particular machine using a
-simple text file (which can live in the repository, or not).  Or you
-could write another backend and get your roles from DNS or LDAP or
-something (I've never felt the need).
-
-slack has a fair number of options to change its behavior, which can be
-specified in an optional configuration file, /etc/slack.conf, on the
-host running slack, or on the command line (which takes precedence over
-the config file).  The location of the config file can also be specified
-on the command line.
-
-The software itself is split into a frontend (slack), and a whole mess
-of backends (slack-*).  The job of the frontend is to interpret command
-line options and orchestrate the various backends.  The backends are all
-separate executables, so if you wish you can replace them or invoke them
-in your own interesting ways.
-
-OPTIONS/CONFIG:
-
-Slack takes long options, like "--source".  Sometimes they have
-abbreviations, like "-s".  Each of the options can be specified in the
-config file by upcasing them and specifying KEY=value pairs.
-variables.  For example the command line:
-    slack --source /var/lib/slack-repository
-would become this line in slack.conf:
-    SOURCE=/var/lib/slack-repository
-and then you could just type "slack" on the command line.
-
-REPOSITORY:
-
-You probably want to put your repository in some sort of source control
-system (e.g. CVS).  slack doesn't actually require that, though.
-
-The repository is the thing specified by the SOURCE config option.
-slack tools in $SOURCE/roles/ for roles.  For example, it looks for the
-role "nss" (and all its subroles) in the directory $SOURCE/roles/nss
-
-The path of the ROLE_LIST file is relative to the repository.  So, if
-you do this:
-    ROLE_LIST=etc/roles.conf
-    SOURCE=/var/lib/slack-repository
-then slack-getroles will look at
-/var/lib/slack-repository/etc/roles.conf to get its role list.
-
-ROLES:
-
-Inside a role, you might have some files.  These are laid out in the
-"files" subdirectory of the role, laid out in a tree just like they will
-be installed on your host.  So, for example, if you have the file:
-    $SOURCE/roles/nss/files/etc/nsswitch.conf
-then the nss role will replace /etc/nsswitch.conf on your host with that
-file.
-
-
-
-OPERATIONS:
-
-FAQ:
-
-What's so great about slack, then?
-  Nothing, really.  The code is kind of a mess, and I'm sure you can
-  come up with better :)
-
-  People seem to like it, though, and if pressed, I'd say that it's
-  pretty simple to use, and probably close to what you want to be doing,
-  and that it doesn't tend to force some weird strict philosophy on you.
-
-  Also it probably gets major points for existing.
-
-That's it?
-  Pretty much.
-
-What does the name stand for?
-  "Sysadmins' Lazy Auto-Configuration Kit".  Yes, this was a "backronym" --
-  I named it "slack" on a dare (see CREDITS).
-    
-Are you associated with the Church of the Subgenius?
-  I don't *think* so...
-
-What is slack written in?
-  Perl
-
-Why isn't it written in (insert language)?
-  I wanted to use an interpreted language that I didn't have to convince
-  sysadmins to install on their machines, and shell would have ended up
-  looking even worse than this Perl.  Sometimes I do regret it, though.
-  :/
-
-Shouldn't people be using (cfengine/conf packages/whatever)?
-  Probably.  Feel free to try to convince them.
-
-How do I set up slack to use rsyncd over ssh?
-    1) Generate a public/private keypair for SSH
-    2) Put the private key on clients in /root/.ssh/slack-key
-    3) Add a stanza like this on clients to /root/.ssh/config:
-    Host slack-master
-            User slack
-            IdentityFile /root/.ssh/slack-key
-
-    4) Pick a master server, make a CNAME "slack-master" pointed at it
-    5) Install the slack-master package on that server
-    6) Put the public key on that server in ~slack/.ssh/authorized_keys (see the
-        example in /usr/share/doc/slack-master)
+$Id$
