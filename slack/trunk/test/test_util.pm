@@ -11,14 +11,15 @@ use Sys::Hostname;
     
     @ISA = qw(Exporter);
     @EXPORT = ();
-    @EXPORT_OK = qw(gen_config_file gen_wanted);
+    @EXPORT_OK = qw(gen_config_file gen_wanted write_to_file);
 }
 use vars qw($test_config_file %test_config @test_roles $test_hostname);
+use vars qw($TEST_TMPDIR);
 push @EXPORT, qw($test_config_file %test_config @test_roles $test_hostname);
 
 # Because all the scripts chdir('/'), we need to know the cwd for our configs
 my $TEST_DIR = getcwd;
-my $TEST_TMPDIR = getcwd."/tmp";
+$TEST_TMPDIR = getcwd."/tmp";
 $test_hostname = hostname;
  
 $test_config_file = "$TEST_DIR/slack.conf";
@@ -120,6 +121,17 @@ sub gen_wanted ($$) {
         return unless ($filename =~ s#^$base/##); 
         $hashref->{$filename} = $filetype;
     };
+}
+
+sub write_to_file ($$) {
+    my ($file, $text) = @_;
+    my $fh;
+    open($fh, '>', $file)
+        or die "Could not open $file for writing: $!";
+    print $fh $text
+        or die "Could not write to $file: $!";
+    close($fh)
+        or die "Could not close $file: $!";
 }
 
 1;
