@@ -428,7 +428,7 @@ sub compare_files ($$) {
     }
   }
   # They are regular files!  We can actually run diff!
-  return diff($oldname, $newname);
+  return diff($oldname, $newname) | $return;
 }
 
 sub diff ($$) {
