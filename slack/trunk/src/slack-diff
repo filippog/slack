@@ -274,6 +274,10 @@ sub compare_files ($$) {
   my ($old, $new); # stat buffers
   my $return = 0;
 
+  # Get rid of unsightly double slashes
+  $oldname =~ s#//##g;
+  $newname =~ s#//##g;
+  
   eval { $old = lstat($oldname); };
   if (not defined $old and not $!{ENOENT}) {
     warn "$PROG: Could not stat $oldname: $!\n";
