@@ -16,7 +16,6 @@ use sigtrap qw(die untrapped normal-signals
                stack-trace any error-signals);
 
 use File::Path;
-use File::Find;
 
 use constant LIB_DIR => '/usr/lib/slack';
 use lib LIB_DIR;
@@ -113,7 +112,7 @@ sub install_files ($) {
   my $source = $opt{stage} . "/roles/" . $role . "/files/";
   my $destination = $opt{root} . "/";
   my @command = (@rsync, $source, $destination);
-  my ($rsync_pid, $rsync_fh);
+  my ($pid, $fh);
 
   if (not -d $source) {
     ($opt{verbose} > 0) and
@@ -132,9 +131,9 @@ sub install_files ($) {
 
   # Divide into parent (which will make a list of files to install)
   # and child (which will exec rsync)
-  if ($rsync_pid = open($rsync_fh, "|-")) {
+  if ($pid = open($fh, "|-")) {
     # Parent
-  } elsif (defined $rsync_pid) {
+  } elsif (defined $pid) {
     # Child
     # This redirection is necessary because rsync sends
     #   verbose output to STDOUT
@@ -146,50 +145,20 @@ sub install_files ($) {
     die "Could not fork: $!\n";
   }
 
-  select((select($rsync_fh), $|=1)[0]);  # Turn on autoflush
+  select((select($fh), $|=1)[0]);  # Turn on autoflush
 
-  # Find files to rsync
-  # Basically, we try to exclude directories, if at all possible,
-  # so we're not constantly resetting permissions on /, /etc, and so on.
-  find ({
-      wanted => sub {
-        if (-l or not -d _) {
-          # Copy all files, links, etc
-          my $file = $File::Find::name;
-          # Strip the $source from the path,
-          # since rsync expects relative paths
-          ($file =~ s#^$source##)
-            or die "sub failed: $source|$file";
+  my $callback = sub {
+    my ($file) = @_;
+    ($file =~ s#^$source##)
+      or die "sub failed: $source|$file";
+    print $fh "$file\0";
+  };
 
-          #print STDERR ":$file\n";
-          print $rsync_fh "$file\0";
-        } elsif (-d _) {
-          # For directories, we only want to copy it if it doesn't
-          # exist in the destination yet.
-          my $dir = $File::Find::name;
-          # We know the root directory will exist (we make it above),
-          # so skip the base of the source
-          (my $short_source = $source) =~ s#/$##;
-          return if $dir eq $short_source;
+  # This will print files to be synced to the $fh
+  Slack::find_files_to_install($source, $destination, $callback);
 
-          # Strip the $source from the path,
-          # since rsync expects relative paths
-          ($dir =~ s#^$source##)
-            or die "sub failed: $source|$dir";
-
-          if (not -d "$destination/$dir") {
-            #print STDERR ":$dir\n";
-            print $rsync_fh "$dir\0";
-          }
-        }
-      }
-    },
-    $source,
-  );
-
-  # Check return value
-  unless (close($rsync_fh)) {
+  # Close fh, waitpid, and check return value
+  unless (close($fh)) {
     Slack::check_system_exit(@command);
   }
 }
-
