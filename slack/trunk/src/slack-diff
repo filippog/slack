@@ -275,8 +275,8 @@ sub compare_files ($$) {
   my $return = 0;
 
   # Get rid of unsightly double slashes
-  $oldname =~ s#//##g;
-  $newname =~ s#//##g;
+  $oldname =~ s#//#/#g;
+  $newname =~ s#//#/#g;
   
   eval { $old = lstat($oldname); };
   if (not defined $old and not $!{ENOENT}) {
