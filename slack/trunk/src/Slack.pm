@@ -10,6 +10,7 @@ package Slack;
 require 5.006;
 use strict;
 use Carp qw(cluck confess croak);
+use File::Find;
 
 use base qw(Exporter);
 use vars qw($VERSION @EXPORT @EXPORT_OK $DEFAULT_CONFIG_FILE);
@@ -262,6 +263,43 @@ sub prompt ($) {
   }
 
   $term->readline($prompt);
-};
+}
+
+
+# Calls the callback on absolute pathnames of files in the source directory,
+# and also on names of directories that don't exist in the destination
+# directory (i.e. where $source/foo exists but $destination/foo does not).
+sub find_files_to_install ($$$) {
+  my ($source, $destination, $callback) = @_;
+  return find ({
+      wanted => sub {
+        if (-l or not -d _) {
+          # Copy all files, links, etc
+          my $file = $File::Find::name;
+          &$callback($file);
+        } elsif (-d _) {
+          # For directories, we only want to copy it if it doesn't
+          # exist in the destination yet.
+          my $dir = $File::Find::name;
+          # We know the root directory will exist (we make it above),
+          # so skip the base of the source
+          (my $short_source = $source) =~ s#/$##;
+          return if $dir eq $short_source;
+
+          # Strip the $source from the path,
+          # so we can build the destination dir from it.
+          my $subdir = $dir;
+          ($subdir =~ s#^$source##)
+            or croak "sub failed: $source|$subdir";
+
+          if (not -d "$destination/$subdir") {
+            &$callback($dir);
+          }
+        }
+      }
+    },
+    $source,
+  );
+}
 
 1;
