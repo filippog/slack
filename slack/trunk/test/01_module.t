@@ -36,11 +36,11 @@ can_ok("Slack", qw(default_usage read_config check_system_exit get_options));
     $! = 0;
     $? = 0;
 
-    system('/bin/true');
+    system('true');
     eval "Slack::check_system_exit('');";
     like($@, qr#Unknown error#, "check_system_exit exit true");
 
-    system('/bin/false');
+    system('false');
     eval "Slack::check_system_exit('');";
     like($@, qr#'' exited 1\b#, "check_system_exit exit false");
 
