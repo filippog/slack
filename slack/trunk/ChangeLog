@@ -1,4 +1,5 @@
 2006-10-12  Alan Sundell  <alan@sundell.net>
+	* Version 0.14.0
 	* slack.8: added missing and new options, and a section
 	    on preview modes
 	* slack: made --preview require a mode to avoid confusion of preview

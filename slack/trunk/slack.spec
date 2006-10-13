@@ -1,6 +1,6 @@
 Summary: slack configuration management tool
 Name: slack
-Version: 0.13.2
+Version: 0.14.0
 Release: 1
 License: GPL
 Group: System Environment/Libraries
@@ -48,6 +48,10 @@ if [ $1 = 0 ] ; then
 fi
 
 %changelog
+* Thu Oct 12 2005 Alan Sundell <alan@sundell.net> 0.14.0-1
+- New upstream source (see ChangeLog).
+    new --preview option
+
 * Wed Feb 09 2005 Alan Sundell <alan@sundell.net> 0.13.2-1
 - New upstream source (see ChangeLog).
     allows non-existent files dir

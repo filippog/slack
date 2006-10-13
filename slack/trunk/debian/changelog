@@ -1,3 +1,13 @@
+slack (0.14.0) stable; urgency=low
+
+  * New upstream source (see ChangeLog).
+        new --preview option
+  * Removing the release from the version number because this
+    apparently messes with the expectations of some people's
+    archive management tools.
+  
+ -- Alan Sundell <alan@sundell.net>  Thu, 12 Oct 2006 23:49:00 -0700
+
 slack (0.13.2-1) stable; urgency=low
 
   * New upstream source (see ChangeLog).
