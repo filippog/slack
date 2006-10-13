@@ -1,3 +1,14 @@
+2006-10-12  Alan Sundell  <alan@sundell.net>
+	* slack.8: added missing and new options, and a section
+	    on preview modes
+	* slack: made --preview require a mode to avoid confusion of preview
+	    modes and role names; made 'prompt' preview mode run the
+	    preinstall/fixfiles scripts before showing file diff
+
+2006-09-25  Alan Sundell  <alan@sundell.net>
+	* slack-rolediff: renamed from slack-preview to avoid name conflict
+	* 08_diff.t: tests for slack-diff
+
 2006-09-21  Alan Sundell  <alan@sundell.net>
 	* COPYING, GPL, CREDITS: add license, attribution
 	* README: lots of new text about slack
