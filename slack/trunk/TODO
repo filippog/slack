@@ -3,6 +3,12 @@
 reorganize TODO file :)
 
 #################
+in rolediff, feed the files to slack-diff via stdin or something to speed
+things up.
+
+Slack.pm: in find_files_to_install(), probably better to hand the callback a
+relative path (sub out ^$source/).
+
 make run_backend() do the printing to stderr and dereferencing backend flags
 
 write unit tests for slack-stage changes (--subdir support)
@@ -11,7 +17,6 @@ more unit tests for slack-diff
 
 manpage update:
     describe order of operations
-    mention all the new options
 
 add functionality to check manually-supplied role list against list in
     slack-getroles, with option to override
@@ -28,6 +33,9 @@ support preview
     add a flag to run script in preview with a dry-run flag or env
 function library for shell scripts
 in RPM, deb, create subdirs of CACHE
+
+replace --cvs-exclude in slack-sync with a better exclude list
+    [so people can, against my advice :), install .so files and such]
 #################
 
 PRE-1.0:
