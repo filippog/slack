@@ -53,8 +53,9 @@ select((select(STDERR), $|=1)[0]);
 my $usage = Slack::default_usage("$PROG [options] [<role>...]");
 $usage .= <<EOF;
 
-  -p, --preview
+  --preview MODE
       Do a diff of scripts and files before running them.
+      MODE can be one of 'simple' or 'prompt'.
 
   --no-files
       Don't install any files in ROOT, but tell rsync to print what
@@ -85,7 +86,7 @@ my %command_line_opt = ();
 Slack::get_options(
   opthash => \%opt,
   command_line_options => [
-    'preview|p:s',
+    'preview=s',
     'role-list=s',
     'no-scripts|noscripts',
     'no-files|nofiles',
@@ -151,12 +152,8 @@ if ($opt{'diff'}) {
 # Preview takes an optional argument.  If no argument is given,
 # it gets "" from getopt.
 if (defined $opt{'preview'}) {
-  if ($opt{'preview'} eq '') {
-    $opt{'preview'} = 'simple';
-  } else {
-    if (not grep /^$opt{'preview'}$/, qw(simple prompt)) {
-      die "Unknown preview mode '$opt{'preview'}'!";
-    }
+  if (not grep /^$opt{'preview'}$/, qw(simple prompt)) {
+    die "Unknown preview mode '$opt{'preview'}'!";
   }
 }
     
@@ -227,15 +224,23 @@ ROLE: for my $role (@roles) {
     @{$backend_flags{stage}}, '--subdir=files', $role);
   
   if ($opt{preview}) {
-    my $prompt = ($opt{preview} eq 'prompt');
-      
-    # Give a diff
-    $opt{verbose} and print STDERR "$PROG: preview $role\n";
-    run_conditional_backend($prompt, 'slack-rolediff',
-      @{$backend_flags{preview}}, $role);
-
-    # In the simple mode, we just move along after showing the diff
-    next ROLE if $opt{preview} eq 'simple';
+    if ($opt{preview} eq 'simple') {
+      $opt{verbose} and print STDERR "$PROG: preview $role\n";
+      # Here, we run the backend in no-prompt mode.
+      run_conditional_backend(0, 'slack-rolediff',
+        @{$backend_flags{preview}}, $role);
+      # ...and we skip further action in the ROLE after showing the diff.
+      next ROLE;
+    } elsif ($opt{preview} eq 'prompt') {
+      $opt{verbose} and print STDERR "$PROG: preview scripts $role\n";
+      # Here, we want to prompt and just do the scripts, since
+      # we need to run preinstall and fixfiles before doing the files.
+      run_conditional_backend(1, 'slack-rolediff',
+        @{$backend_flags{preview}}, '--subdir=scripts', $role);
+    } else {
+      # Should get caught in option processing, above
+      die "Unknown preview mode!\n";
+    }
   }
 
   $opt{verbose} and print STDERR "$PROG: stage scripts $role\n";
@@ -251,6 +256,14 @@ ROLE: for my $role (@roles) {
   $opt{verbose} and print STDERR "$PROG: fixfiles $role\n";
   run_backend('slack-runscript',
     @{$backend_flags{fixfiles}}, 'fixfiles', $role);
+
+  # preview files
+  if ($opt{preview} and $opt{preview} eq 'prompt') {
+      $opt{verbose} and print STDERR "$PROG: preview files $role\n";
+      run_conditional_backend(1, 'slack-rolediff',
+        @{$backend_flags{preview}}, '--subdir=files', $role);
+  }
+
   # installfiles
   $opt{verbose} and print STDERR "$PROG: install $role\n";
   run_backend('slack-installfiles',
