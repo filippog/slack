@@ -1,0 +1,15 @@
+#!/bin/sh
+# $Id$
+# post remove script for the Debian GNU/Linux slack package
+
+set -e
+
+if [ "$1" = "purge" -o "$1" = "remove" ]; then
+        . /etc/slack.conf
+        # purge the cache
+        rm -rf "$CACHE"/*
+        # remove the stage
+        rm -rf "$STAGE"
+fi
+
+exit 0
