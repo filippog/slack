@@ -1,0 +1,137 @@
+slack (0.14.1) stable; urgency=low
+
+  * New upstream source (see ChangeLog).
+        fixes bugs in rsync invocation in slack-getroles
+  
+ -- Alan Sundell <alan@sundell.net>  Sun, 05 Nov 2006 22:52:00 -0800
+
+slack (0.14.0) stable; urgency=low
+
+  * New upstream source (see ChangeLog).
+        new --preview option
+  * Removing the release from the version number because this
+    apparently messes with the expectations of some people's
+    archive management tools.
+  
+ -- Alan Sundell <alan@sundell.net>  Thu, 12 Oct 2006 23:49:00 -0700
+
+slack (0.13.2-1) stable; urgency=low
+
+  * New upstream source (see ChangeLog).
+        allows non-existent files dir
+  
+ -- Alan Sundell <alan@sundell.net>  Wed, 09 Feb 2005 11:00:00 -0800
+
+slack (0.13.1-1) stable; urgency=low
+
+  * New upstream source (see ChangeLog).
+        adds unit tests
+        slack-runscript mentions when it skips a non-executable script
+            when --verbose is on
+        fix bug causing undefined subroutine reference when a backend failed
+  
+ -- Alan Sundell <alan@sundell.net>  Sat, 08 Jan 2005 20:00:00 -0800
+
+slack (0.13-1) stable; urgency=low
+
+  * New upstream source (see ChangeLog).
+        adds --hostname, --no-sync, --libexec-dir options
+        exports root, stage, hostname, verbose to script
+            environment
+        minor fixes for bugs introduced in 0.12.2
+  
+ -- Alan Sundell <alan@sundell.net>  Wed, 22 Dec 2004 16:00:00 -0800
+
+slack (0.12.2-1) stable; urgency=low
+
+  * New upstream source (see ChangeLog).
+        moves functions into common library Slack.pm
+  
+ -- Alan Sundell <alan@sundell.net>  Tue, 21 Dec 2004 20:20:00 -0800
+
+slack (0.12.1-1) stable; urgency=low
+
+  * New upstream source (see ChangeLog).
+        fixes bug introduced in 0.11-1 that broke backups
+  
+ -- Alan Sundell <alan@sundell.net>  Tue, 21 Dec 2004 00:20:00 -0800
+
+slack (0.12-1) stable; urgency=low
+
+  * New upstream source (see ChangeLog).
+        swap preinstall and fixfiles in order of operations
+
+ -- Alan Sundell <alan@sundell.net>  Thu, 03 Dec 2004 10:30:00 -0800
+
+slack (0.11-1) stable; urgency=low
+
+  * New upstream source (see ChangeLog).
+        add --no-script, --no-files, change -n to just mean both of those
+
+ -- Alan Sundell <alan@sundell.net>  Thu, 11 Nov 2004 21:00:00 -0700
+
+slack (0.10.2-1) stable; urgency=low
+
+  * New upstream source (see ChangeLog).
+        use the full role name in the stage
+
+ -- Alan Sundell <alan@sundell.net>  Fri, 29 Oct 2004 17:00:00 -0700
+
+slack (0.10.1-1) stable; urgency=low
+
+  * New upstream source (see ChangeLog).
+        minor code cleanups
+
+ -- Alan Sundell <alan@sundell.net>  Fri, 29 Oct 2004 16:00:00 -0700
+
+slack (0.10-1) stable; urgency=low
+
+  * New upstream source (see ChangeLog).
+        chiefly: add new staging step, removing need for .keepme~ files
+  * Make sure CACHE and STAGE are installed mode 0700
+  * Remove CACHE and STAGE on purge/remove
+
+ -- Alan Sundell <alan@sundell.net>  Fri, 22 Oct 2004 16:00:00 -0700
+
+slack (0.7-1) stable; urgency=low
+
+  * New upstream source.
+
+ -- Alan Sundell <alan@sundell.net>  Fri, 13 Aug 2004 14:00:00 -0700
+
+slack (0.6-1) stable; urgency=low
+
+  * New upstream source.
+
+ -- Alan Sundell <alan@sundell.net>  Sun, 18 Jul 2004 20:30:00 -0700
+
+slack (0.5-1) stable; urgency=low
+
+  * New upstream source.
+
+ -- Alan Sundell <alan@sundell.net>  Sat, 17 Jul 2004 23:50:00 -0700
+
+slack (0.4-1) stable; urgency=low
+
+  * New upstream source.
+
+ -- Alan Sundell <alan@sundell.net>  Thu, 03 Jun 2004 23:04:01 -0700
+
+slack (0.3-1) stable; urgency=low
+
+  * New upstream source.
+
+ -- Alan Sundell <alan@sundell.net>  Mon, 31 May 2004 01:31:45 -0700
+
+slack (0.2-1) stable; urgency=low
+
+  * New upstream source.
+
+ -- Alan Sundell <alan@sundell.net>  Wed, 26 May 2004 22:35:00 -0700
+
+slack (0.1-1) stable; urgency=low
+
+  * Initial Version.
+
+ -- Alan Sundell <alan@sundell.net>  Sun, 23 May 2004 23:00:00 -0700
+
