@@ -1,6 +1,6 @@
 Summary: slack configuration management tool
 Name: slack
-Version: 0.14.0
+Version: 0.14.1
 Release: 1
 License: GPL
 Group: System Environment/Libraries
@@ -48,7 +48,11 @@ if [ $1 = 0 ] ; then
 fi
 
 %changelog
-* Thu Oct 12 2005 Alan Sundell <alan@sundell.net> 0.14.0-1
+* Sun Nov 05 2006 Alan Sundell <alan@sundell.net> 0.14.1-1
+- New upstream source (see ChangeLog).
+    fixes bugs in rsync invocation in slack-getroles
+
+* Thu Oct 12 2006 Alan Sundell <alan@sundell.net> 0.14.0-1
 - New upstream source (see ChangeLog).
     new --preview option
 

@@ -1,3 +1,9 @@
+2006-11-05  Alan Sundell  <alan@sundell.net>
+	* Version 0.14.1
+	* slack-getroles: remove --delete from rsync options (incompatible
+	    with newer versions [2.6.8] of rsync without -r); call
+	    check_system_exit() properly
+
 2006-10-12  Alan Sundell  <alan@sundell.net>
 	* Version 0.14.0
 	* slack.8: added missing and new options, and a section
