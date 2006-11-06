@@ -36,6 +36,9 @@ in RPM, deb, create subdirs of CACHE
 
 replace --cvs-exclude in slack-sync with a better exclude list
     [so people can, against my advice :), install .so files and such]
+
+a push script to read roles.conf and push a role to all servers running it
+
 #################
 
 PRE-1.0:
