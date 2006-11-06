@@ -24,7 +24,6 @@ use Slack;
 my @rsync = ('rsync',
               '--links',
               '--times',
-              '--delete',
               );
 
 (my $PROG = $0) =~ s#.*/##;
@@ -172,7 +171,7 @@ sub sync_list () {
   if ($kid != $rsync_pid) {
     die "waitpid returned $kid\n";
   } elsif ($?) {
-    check_system_exit(@command);
+    Slack::check_system_exit(@command);
   }
   $opt{'role-list'} = $destination;
 }
