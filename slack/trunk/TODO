@@ -39,6 +39,9 @@ replace --cvs-exclude in slack-sync with a better exclude list
 
 a push script to read roles.conf and push a role to all servers running it
 
+defaults for slack.conf in Slack.pm or somewhere?  (so people don't have to
+keep patching as new variables are introduced...)
+
 #################
 
 PRE-1.0:
