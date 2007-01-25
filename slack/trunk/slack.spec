@@ -1,12 +1,14 @@
-Summary: slack configuration management tool
-Name: slack
-Version: 0.14.1
-Release: 1
-License: GPL
-Group: System Environment/Libraries
-Buildroot: /tmp/%{name}-root
-BuildArch: noarch
-Requires: rsync >= 2.6.0
+Summary:	slack configuration management tool
+Name:		slack
+Version:	0.14.1
+Release:	2
+License:	GPL
+Group:		System Environment/Libraries
+URL:		http://www.sundell.net/~alan/projects/slack/
+Source0:	http://www.sundell.net/~alan/projects/slack/%{name}-%{version}.tar.gz
+Buildroot:	%{_tmppath}/%{name}-%{version}-%{release}-root
+BuildArch:	noarch
+Requires:	rsync >= 2.6.0
 
 %description
 configuration management program for lazy admins
@@ -18,24 +20,30 @@ sort of source (NFS directory, remote server over SSH, remote server over
 rsync) that rsync supports.
 
 %prep
+%setup -q
 
 %build
+make
 
 %install
-[ "$RPM_BUILD_ROOT" != "/" ] && rm -rf $RPM_BUILD_ROOT
-cd $RPM_SOURCE_DIR
-%makeinstall libexecdir=$RPM_BUILD_ROOT/%{_libdir}
+rm -rf %{buildroot}
+mkdir -p %{buildroot}/%{_bindir}
+%makeinstall libexecdir=%{buildroot}/%{_libdir}
 
 %clean
-rm -rf $RPM_BUILD_ROOT
+rm -rf %{buildroot}
 
 %files
-%defattr(-,root,root)
+%defattr(644,root,root)
 %config %{_sysconfdir}/slack.conf
-%{_sbindir}
+%doc ChangeLog CREDITS COPYING README FAQ TODO doc/slack-intro
+%{_mandir}/man1/slack-diff.1.gz
+%{_mandir}/man5/slack.conf.5.gz
+%{_mandir}/man8/slack.8.gz
+%defattr(755,root,root)
+%{_bindir}/slack-diff
+%{_sbindir}/slack
 %{_libdir}/slack
-%{_mandir}/man5
-%{_mandir}/man8
 %defattr(0700,root,root)
 %{_localstatedir}/lib/slack
 %{_localstatedir}/cache/slack
@@ -48,6 +56,9 @@ if [ $1 = 0 ] ; then
 fi
 
 %changelog
+* Thu Nov 14 2006 David Lowry <dlowry@bju.edu> 0.14.1-2
+- Spec file changes
+
 * Sun Nov 05 2006 Alan Sundell <alan@sundell.net> 0.14.1-1
 - New upstream source (see ChangeLog).
     fixes bugs in rsync invocation in slack-getroles
@@ -116,3 +127,4 @@ fi
 
 * Mon May 24 2004 Alan Sundell <alan@sundell.net> 0.1-1
 - initial version
+

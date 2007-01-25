@@ -1,3 +1,8 @@
+2007-01-25  Alan Sundell  <alan@sundell.net>
+	* src/Makefile: mkdir /usr/bin to fix slack-diff install (thanks
+			to Robert Flemming and Chris Heiser)
+	* slack.spec: new, much-improved spec file from David Lowry
+
 2006-11-05  Alan Sundell  <alan@sundell.net>
 	* Version 0.14.1
 	* slack-getroles: remove --delete from rsync options (incompatible
