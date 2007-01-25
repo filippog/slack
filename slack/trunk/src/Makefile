@@ -11,6 +11,7 @@ install: install-bin install-conf install-lib install-man
 install-bin: all
 	$(MKDIR) $(DESTDIR)$(sbindir)
 	$(INSTALL) slack $(DESTDIR)$(sbindir)
+	$(MKDIR) $(DESTDIR)$(bindir)
 	$(INSTALL) slack-diff $(DESTDIR)$(bindir)
 	$(MKDIR) $(DESTDIR)$(slack_libexecdir)
 	@set -ex;\
