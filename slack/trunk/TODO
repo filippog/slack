@@ -90,3 +90,6 @@ LATER:
 * something like rpm -ql, -qf to show/query files in a role (just from files
     dir)
 * use a tarball as a source (possibly fetched with wget)
+* support http urls (with wget)
+* use rsync+ssh to mean rsync -e ssh (like svn)
+* maybe split the getting stuff in sync/getroles from the syncing stuff in stage, so we can have a common backend for various URLs
