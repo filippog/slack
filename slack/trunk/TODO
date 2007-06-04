@@ -3,8 +3,15 @@
 reorganize TODO file :)
 
 #################
+make slack-getroles use slack-sync, so only slack-sync needs to know about
+    how to get stuff from source, and we can more easily add support
+    for other roles sources
+
 in rolediff, feed the files to slack-diff via stdin or something to speed
 things up.
+
+fully support alternate diff programs (temp files or fds for modes with
+    filename and attribute in the text; honor DIFF env var or something)
 
 Slack.pm: in find_files_to_install(), probably better to hand the callback a
 relative path (sub out ^$source/).
