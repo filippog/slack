@@ -1,3 +1,6 @@
+2007-06-15  Alan Sundell  <alan@sundell.net>
+	* doc/slack.conf.5: describe the four forms of SOURCE
+
 2007-01-25  Alan Sundell  <alan@sundell.net>
 	* src/Makefile: mkdir /usr/bin to fix slack-diff install (thanks
 			to Robert Flemming and Chris Heiser)
