@@ -2,6 +2,10 @@
 	* Slack.pm, slack-sync, slack-getroles: patch to add --rsh/-e option
 	    from David Lowry.  This allows us to explicitly enable the
 	    behavior implied by a double colon in SOURCE.
+	* slack-stage: fix from Brian Brazil for a bug that occurs with
+	    files in a subrole that have the same size and timestamp as
+	    those in a parent role, such as can occur when the two files
+	    are checked into a repository at the same time.
 
 2007-06-15  Alan Sundell  <alan@sundell.net>
 	* doc/slack.conf.5: describe the four forms of SOURCE

@@ -26,6 +26,7 @@ use Slack;
 my @rsync = ('rsync',
               '--recursive',
               '--times',
+              '--ignore-times',
               '--perms',
               '--sparse',
               );
