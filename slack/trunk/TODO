@@ -3,12 +3,16 @@
 reorganize TODO file :)
 
 #################
+make slack.conf noreplace in slack.spec?
+
 make slack-getroles use slack-sync, so only slack-sync needs to know about
     how to get stuff from source, and we can more easily add support
     for other roles sources
 
 in rolediff, feed the files to slack-diff via stdin or something to speed
 things up.
+
+in --preview=prompt, add a "skip" option to skip a particular role
 
 fully support alternate diff programs (temp files or fds for modes with
     filename and attribute in the text; honor DIFF env var or something)
@@ -24,6 +28,8 @@ more unit tests for slack-diff
 
 manpage update:
     describe order of operations
+
+add random sleep option
 
 add functionality to check manually-supplied role list against list in
     slack-getroles, with option to override
@@ -97,6 +103,6 @@ LATER:
 * something like rpm -ql, -qf to show/query files in a role (just from files
     dir)
 * use a tarball as a source (possibly fetched with wget)
-* support http urls (with wget)
+* support http urls (with wget), both as raw dir trees and as tar.gz files
 * use rsync+ssh to mean rsync -e ssh (like svn)
 * maybe split the getting stuff in sync/getroles from the syncing stuff in stage, so we can have a common backend for various URLs
