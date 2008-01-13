@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Test::More tests => 35;
+use Test::More tests => 37;
 
 BEGIN {
     chdir 'test' if -d 'test';
@@ -223,6 +223,13 @@ can_ok("Slack", qw(default_usage read_config check_system_exit get_options));
         my $helptext = `perl -I$INC[0] -MSlack -e 'Slack::get_options' -- --invalid 2>&1`;
         isnt($?, 0, "get_options usage exit code");
         like($helptext, qr/^Usage: /m, "get_options usage output");
+    }
+
+    # test --version with
+    {
+        my $versiontext = `perl -I$INC[0] -MSlack -e 'Slack::get_options' -- --version`;
+        is($?, 0, 'get_options --version exit code');
+        like($versiontext, qr/^slack version [\d\.]+$/, 'get_options --version output')
     }
 }
 

@@ -14,7 +14,7 @@ use File::Find;
 
 use base qw(Exporter);
 use vars qw($VERSION @EXPORT @EXPORT_OK $DEFAULT_CONFIG_FILE);
-$VERSION = '0.1';
+$VERSION = '0.14.1';
 @EXPORT    = qw();
 @EXPORT_OK = qw();
 
@@ -24,6 +24,7 @@ my $term;
 
 my @default_options = (
     'help|h|?',
+    'version',
     'verbose|v+',
     'quiet',
     'config|C=s',
@@ -46,6 +47,9 @@ Usage: $synopsis
 Options:
   -h, -?, --help
       Print this help message and exit.
+
+  --version
+      Print the version number and exit.
 
   -v, --verbose
       Be verbose.
@@ -202,6 +206,11 @@ sub get_options {
   }
   if ($arg{opthash}->{help}) {
     print $arg{usage};
+    exit 0;
+  }
+
+  if ($arg{opthash}->{version}) {
+    print "slack version $VERSION\n";
     exit 0;
   }
 
