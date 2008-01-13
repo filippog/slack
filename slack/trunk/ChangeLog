@@ -1,6 +1,7 @@
 2008-01-12  Alan Sundell  <alan@sundell.net>
-	* Slack.pm, slack-sync, slack-getroles: patch to add --rsh option
-	    from David Lowry
+	* Slack.pm, slack-sync, slack-getroles: patch to add --rsh/-e option
+	    from David Lowry.  This allows us to explicitly enable the
+	    behavior implied by a double colon in SOURCE.
 
 2007-06-15  Alan Sundell  <alan@sundell.net>
 	* doc/slack.conf.5: describe the four forms of SOURCE
