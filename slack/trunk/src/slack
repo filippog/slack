@@ -77,6 +77,9 @@ $usage .= <<EOF;
   --diff PROG
       Use this diff program for previews
 
+  --sleep TIME
+      Randomly sleep between 1 and TIME seconds before starting
+      operations
 EOF
 
 # Options
@@ -93,6 +96,7 @@ Slack::get_options(
     'no-sync|nosync',
     'libexec-dir=s',
     'diff=s',
+    'sleep=i',
   ],
   required_options => [ qw(source cache stage root) ],
   command_line_hash => \%command_line_opt,
@@ -173,6 +177,13 @@ if ($opt{backup} and $opt{'backup-dir'}) {
     ;
 }
 # }}}
+
+# Random sleep, helpful when called from cron.
+if ($opt{sleep}) {
+  my $secs = int(rand($opt{sleep})) + 1;
+  $opt{verbose} and print STDERR "$PROG: sleep $secs\n";
+  sleep($secs);
+}
 
 # Get a list of roles to install from slack-getroles {{{
 if (not @ARGV) {

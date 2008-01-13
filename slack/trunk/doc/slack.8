@@ -101,6 +101,10 @@ MODE can be one of 'simple' or 'prompt' (See PREVIEW MODES, below).
 .TP
 \fB\-\-diff PROG\fR
 Use this diff program for previews.
+.TP
+\fB\-\-sleep TIME\fR
+Randomly sleep between 1 and TIME seconds before starting
+operations.  Useful in crontabs.
 
 .SH PREVIEW MODES
 
@@ -156,6 +160,12 @@ slack --source
 .IR user @ workstation :/home/ user /.../slack
 .I rolename
 .RE
+.PP
+To avoid killing your master server when calling from cron:
+.RS
+slack --sleep 3600
+.RE
+
 
 
 .SH FILES
