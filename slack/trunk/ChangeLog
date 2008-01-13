@@ -6,6 +6,10 @@
 	    files in a subrole that have the same size and timestamp as
 	    those in a parent role, such as can occur when the two files
 	    are checked into a repository at the same time.
+	* slack: add a --sleep option for a random sleep.  Useful in
+	    crontabs, where doing 'sleep $(($RANDOM % 3600)) && slack'
+	    can run you afoul of cron's treatment of '%'.
+	* Slack.pm: add a --version option
 
 2007-06-15  Alan Sundell  <alan@sundell.net>
 	* doc/slack.conf.5: describe the four forms of SOURCE
