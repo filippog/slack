@@ -76,9 +76,13 @@ if ($opt{backup} and $opt{'backup-dir'}) {
   push(@rsync, "--backup", "--backup-dir=$opt{'backup-dir'}");
 }
 # Look at source type, and add options if necessary
-if ($opt{source} =~ m/^[\w@\.-]+::/) {
+if ($opt{'rsh'} or $opt{source} =~ m/^[\w@\.-]+::/) {
   # This is tunnelled rsync, and so needs an extra option
-  push @rsync, '-e', 'ssh';
+  if ($opt{'rsh'}) {
+    push @rsync, '-e', $opt{'rsh'};
+  } else {
+    push @rsync, '-e', 'ssh';
+  }
 }
 
 # Pass options along to rsync

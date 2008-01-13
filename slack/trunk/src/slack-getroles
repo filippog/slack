@@ -112,9 +112,13 @@ if ($opt{'remote-role-list'}) {
     die "Remote path to role-list given, but cache not defined!\n\n$usage\n";
   }
   # Look at source type, and add options if necessary
-  if ($opt{'role-list'} =~ m/^[\w@\.-]+::/) {
+  if ($opt{'rsh'} or $opt{'role-list'} =~ m/^[\w@\.-]+::/) {
     # This is tunnelled rsync, and so needs an extra option
-    push @rsync, '-e', 'ssh';
+    if ($opt{'rsh'}) {
+      push @rsync, '-e', $opt{'rsh'};
+    } else {
+      push @rsync, '-e', 'ssh';
+    }
   }
   sync_list();
 }

@@ -28,6 +28,7 @@ my @default_options = (
     'quiet',
     'config|C=s',
     'source|s=s',
+    'rsh|e=s',
     'cache|c=s',
     'stage|t=s',
     'root|r=s',
@@ -57,6 +58,9 @@ Options:
 
   -s, --source  DIR
       Source for slack files
+
+  -e, --rsh  COMMAND
+      Remote shell for rsync
 
   -c, --cache  DIR
       Local cache directory for slack files
