@@ -2,7 +2,7 @@
 
 use strict;
 use warnings FATAL => qw(all);
-use Test::More tests => 14;
+use Test::More tests => 15;
 use test_util;
 import test_util qw(gen_wanted);
 
@@ -21,10 +21,19 @@ die "Could not remove stage for testing" if (-e $test_config{stage});
   my $role = 'role1';
   my $cache = $test_config{cache}."/roles";
   my $stage = $test_config{stage}."/roles";
+  my $test_time = 1200000000;
+
+  my $overridden_file = "/etc/$role.conf";
+  my $src1 = "$cache/$role/files/$overridden_file";
+  my $src2 = "$cache/$role/files.sub/$overridden_file";
+  my $dst = "$stage/$role.sub/files/$overridden_file";
 
   # sync the role so we've got something known to work with
   (system("../src/slack-sync -C $test_config_file $role 2> /dev/null") == 0)
       or die "Couldn't sync $role for testing"; 
+  # set up the source so the overridden files have the same timestamp
+  utime($test_time, $test_time, $src1, $src2)
+      or die "Couldn't touch $src1 and $src2 for testing";
 
   {
     # Now run the stage
@@ -68,11 +77,14 @@ die "Could not remove stage for testing" if (-e $test_config{stage});
 
     # Check that the file in the subrole overrode the file in the base role
     {
-      my $overridden_file = "/etc/$role.conf";
-      my $src = "$cache/$role/files.sub/$overridden_file";
-      my $dst = "$stage/$role.sub/files/$overridden_file";
-      system("cmp $src $dst >/dev/null 2>&1");
+      system("cmp $src2 $dst >/dev/null 2>&1");
       is($?, 0, "files in subrole override files in base role");
+    }
+
+    # Check that the time on the overridden file is copied from the cache
+    {
+      my $mtime = (stat $dst)[9];
+      is($mtime, $test_time, "timestamp copied from cache");
     }
   }
 
