@@ -10,6 +10,9 @@
 	    crontabs, where doing 'sleep $(($RANDOM % 3600)) && slack'
 	    can run you afoul of cron's treatment of '%'.
 	* Slack.pm: add a --version option
+	* slack.spec: integrate some minor changes from Gordon Messmer's
+	    patch (much already done by David Lowry's patch), most
+	    significantly adding username to buildroot
 
 2007-06-15  Alan Sundell  <alan@sundell.net>
 	* doc/slack.conf.5: describe the four forms of SOURCE

@@ -1,14 +1,15 @@
-Summary:	slack configuration management tool
 Name:		slack
 Version:	0.14.1
 Release:	2
-License:	GPL
+Summary:	slack configuration management tool
 Group:		System Environment/Libraries
+License:	GPL
 URL:		http://www.sundell.net/~alan/projects/slack/
 Source0:	http://www.sundell.net/~alan/projects/slack/%{name}-%{version}.tar.gz
-Buildroot:	%{_tmppath}/%{name}-%{version}-%{release}-root
+Buildroot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:	noarch
 Requires:	rsync >= 2.6.0
+
 
 %description
 configuration management program for lazy admins
@@ -19,19 +20,24 @@ right thing to be done.  It uses rsync to copy files around, so can use any
 sort of source (NFS directory, remote server over SSH, remote server over
 rsync) that rsync supports.
 
+
 %prep
 %setup -q
 
+
 %build
 make
+
 
 %install
 rm -rf %{buildroot}
 mkdir -p %{buildroot}/%{_bindir}
 %makeinstall libexecdir=%{buildroot}/%{_libdir}
 
+
 %clean
 rm -rf %{buildroot}
+
 
 %files
 %defattr(644,root,root)
