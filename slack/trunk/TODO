@@ -10,7 +10,7 @@ make slack-getroles use slack-sync, so only slack-sync needs to know about
     for other roles sources
 
 in rolediff, feed the files to slack-diff via stdin or something to speed
-things up.
+    things up.
 
 in --preview=prompt, add a "skip" option to skip a particular role
 
@@ -18,7 +18,7 @@ fully support alternate diff programs (temp files or fds for modes with
     filename and attribute in the text; honor DIFF env var or something)
 
 Slack.pm: in find_files_to_install(), probably better to hand the callback a
-relative path (sub out ^$source/).
+    relative path (sub out ^$source/).
 
 make run_backend() do the printing to stderr and dereferencing backend flags
 
@@ -29,12 +29,8 @@ more unit tests for slack-diff
 manpage update:
     describe order of operations
 
-add random sleep option
-
 add functionality to check manually-supplied role list against list in
     slack-getroles, with option to override
-clean up debian/rules (wow is it a mess; use some dh_*, man!)
-add --version option
 logging!
 don't test for -x on scripts, just -e (making non-executable scripts
     a fatal error)
@@ -74,8 +70,6 @@ PRE-1.0:
         at once, since we don't know what other files in the scripts/
         directory they may use.
 
-* bundle compatibility scheme
-    
 * Nagging
     - we want to be able to nag admins about files they have not yet installed
         or scripts they have not yet run
