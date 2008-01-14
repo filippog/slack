@@ -1,3 +1,11 @@
+2008-01-14  Alan Sundell  <alan@sundell.net>
+	* src/Makefile: install slack.conf without the execute bit (thanks to
+	    Andrew Pollock)
+	* Makefile, debian/*: pull in a bunch of changes from Andrew Pollock's
+	    debian patch (perhaps to his frustration), with a few changes
+	    to preserve permissions on /var/lib/slack and /var/cache/slack;
+	    and a few of my own changes to the way debs are built.
+	    
 2008-01-12  Alan Sundell  <alan@sundell.net>
 	* Slack.pm, slack-sync, slack-getroles: patch to add --rsh/-e option
 	    from David Lowry.  This allows us to explicitly enable the

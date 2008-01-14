@@ -16,12 +16,8 @@ $(TARGETS)::
 	 for i in $(SUBDIRS); do $(MAKE) -C $$i $@ ; done
 
 deb:
-	fakeroot ./debian/rules binary
-	./debian/rules clean
+	dpkg-buildpackage -b -uc -tc -rfakeroot
 	ls -l ../slack_*_all.deb
-
-clean distclean realclean::
-	./debian/rules clean
 
 dist: distclean
 	mkdir ../$(distdir)
