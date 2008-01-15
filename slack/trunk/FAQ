@@ -28,7 +28,27 @@ Why isn't it written in [insert language]?
   :/
 
 Shouldn't people be using (cfengine/conf packages/whatever)?
-  Probably.  Feel free to try to convince them.
+  Probably.  Feel free to try to convince them, but I'd like to stay out
+  of any config-management wars.
+
+Well, then how does slack compare to other config management systems?
+  slack is both less capable and less complicated than most other config
+  management systems out there.  Most people can figure out how to use
+  it with little documentation (not that we shouldn't write more...), but
+  all it can do is move files around and run some scripts.  However, that
+  may turn out to be all you need.
+
+Why did you write slack when all these other systems existed?
+  slack was designed for environments with no pre-existing config management,
+  and in which there was resistance among the admins to get over the up-front
+  costs of learning and implementing other config management systems.  We saw
+  it as kind of a gateway to get lazy people into config management and
+  automated builds, so that they could later "trade up" to more sophisticated
+  systems.
+
+  Now, however, it seems that a lot of people don't need anything more
+  complicated than slack.  That's fine by me; people should use what works best
+  for them.
 
 How do I set up slack to use rsyncd over ssh?
     1) Generate a public/private keypair for SSH
