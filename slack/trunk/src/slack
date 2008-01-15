@@ -127,7 +127,7 @@ if (defined $command_line_opt{'verbose'} and
   }
 }
 # propagate these flags to all the backends
-for my $option (qw(config root cache stage source hostname)) {
+for my $option (qw(config root cache stage source hostname rsh)) {
   if ($command_line_opt{$option}) {
     for my $action (keys %backend_flags) {
       push @{$backend_flags{$action}},

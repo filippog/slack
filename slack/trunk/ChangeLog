@@ -5,6 +5,7 @@
 	    debian patch (perhaps to his frustration), with a few changes
 	    to preserve permissions on /var/lib/slack and /var/cache/slack;
 	    and a few of my own changes to the way debs are built.
+	* src/slack: Propagate --rsh to backends so the option actually works
 	    
 2008-01-12  Alan Sundell  <alan@sundell.net>
 	* Slack.pm, slack-sync, slack-getroles: patch to add --rsh/-e option
