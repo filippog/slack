@@ -3,6 +3,16 @@
 reorganize TODO file :)
 
 #################
+Version 0.16:
+    Break a bunch of stuff:
+    * change behavior of symlinks in repository -- nobody likes the
+      current behavior, and rsyncd won't let it work as intended anyway.  Just
+      copy them down as symlinks.
+    * don't test for -x on scripts, just -e (making non-executable scripts a
+      fatal error)
+    * get rid of implicit '-e ssh' with a double-colon in SOURCE
+
+#################
 make slack.conf noreplace in slack.spec?
 
 make slack-getroles use slack-sync, so only slack-sync needs to know about
@@ -32,8 +42,6 @@ manpage update:
 add functionality to check manually-supplied role list against list in
     slack-getroles, with option to override
 logging!
-don't test for -x on scripts, just -e (making non-executable scripts
-    a fatal error)
 just skip syncing if source equals cache.
 use an "install" script, if present, instead of built-in
     file install routines
