@@ -1,3 +1,15 @@
+slack (0.15.0) stable; urgency=low
+
+  * New upstream source (see ChangeLog).
+        Three new options:
+            --sleep SECS  (random sleep for crontabs)
+            --rsh COMMAND (instead of default ssh; will replace :: syntax
+                           in future)
+            --version     (print version)
+  * Numerous packaging and installation fixes.
+  
+ -- Alan Sundell <alan@sundell.net>  Mon, 14 Jan 2008 18:00:00 -0800
+
 slack (0.14.1) stable; urgency=low
 
   * New upstream source (see ChangeLog).

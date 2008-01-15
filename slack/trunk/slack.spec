@@ -1,6 +1,6 @@
 Name:		slack
-Version:	0.14.1
-Release:	2
+Version:	0.15.0
+Release:	1
 Summary:	slack configuration management tool
 Group:		System Environment/Libraries
 License:	GPL
@@ -62,6 +62,14 @@ if [ $1 = 0 ] ; then
 fi
 
 %changelog
+* Mon Jan 14 2008 Alan Sundell <alan@sundell.net> 0.15.0-1
+- New upstream source (see ChangeLog).
+    three new options:
+      --sleep SECS  (random sleep for crontabs)
+      --rsh COMMAND (instead of default ssh; will replace :: syntax in future)
+      --version     (print version)
+    numerous packaging and installation fixes
+
 * Thu Nov 14 2006 David Lowry <dlowry@bju.edu> 0.14.1-2
 - Spec file changes
 

@@ -1,4 +1,5 @@
 2008-01-14  Alan Sundell  <alan@sundell.net>
+	* Version 0.15.0
 	* src/Makefile: install slack.conf without the execute bit (thanks to
 	    Andrew Pollock)
 	* Makefile, debian/*: pull in a bunch of changes from Andrew Pollock's
