@@ -152,26 +152,11 @@ sub check_cache ($) {
 sub rsync_source($$@) {
   my ($source, $destination, @roles) = @_;
   my @command = (@rsync, $source, $destination);
-  my ($pid, $fh);
 
   ($opt{verbose} > 0)
     and print STDERR "$PROG: Syncing cache with '@command'\n";
 
-  # Divide into parent (which will make a list of files to install)
-  # and child (which will exec rsync)
-  if ($pid = open($fh, "|-")) {
-    # Parent
-  } elsif (defined $pid) {
-    # Child
-    # This redirection is necessary because rsync sends
-    #   verbose output to STDOUT
-    open(STDOUT, ">&STDERR")
-      or die "Could not redirect STDOUT to STDERR\n";
-    exec(@command);
-    die "Could not exec '@command': $!\n";
-  } else {
-    die "Could not fork: $!\n";
-  }
+  my ($fh) = Slack::wrap_rsync_fh(@command);
 
   # Shove the roles down its throat
   print $fh join("\0", @roles), "\0";

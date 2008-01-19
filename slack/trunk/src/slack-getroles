@@ -155,28 +155,7 @@ sub sync_list () {
   # All this to run an rsync command
   my @command = (@rsync, $source, $destination);
   ($opt{verbose} > 0) and print STDERR "$PROG: Calling '@command'\n";
-  my ($rsync_pid);
-  if ($rsync_pid = fork) {
-    # Parent
-  } elsif (defined $rsync_pid) {
-    # Child
-    open(STDIN, "<", "/dev/null")
-      or die "Could not redirect STDIN from /dev/null\n";
-    # This redirection is necessary because rsync sends
-    #   verbose output to STDOUT
-    open(STDOUT, ">&STDERR")
-      or die "Could not redirect STDOUT to STDERR\n";
-    exec(@command);
-    die "Could not exec '@command': $!\n";
-  } else {
-    die "Could not fork: $!\n";
-  }
-  my $kid = waitpid($rsync_pid, 0);
-  if ($kid != $rsync_pid) {
-    die "waitpid returned $kid\n";
-  } elsif ($?) {
-    Slack::check_system_exit(@command);
-  }
+  Slack::wrap_rsync(@command);
   $opt{'role-list'} = $destination;
 }
 

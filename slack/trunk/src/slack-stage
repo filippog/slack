@@ -218,28 +218,7 @@ sub sync_role ($$@) {
   # All this to run an rsync command
   my @command = (@this_rsync, $source, $destination);
   ($opt{verbose} > 0) and print STDERR "$PROG: Syncing $src_path with '@command'\n";
-  my ($rsync_pid);
-  if ($rsync_pid = fork) {
-    # Parent
-  } elsif (defined $rsync_pid) {
-    # Child
-    open(STDIN, "<", "/dev/null")
-      or die "Could not redirect STDIN from /dev/null\n";
-    # This redirection is necessary because rsync sends
-    #   verbose output to STDOUT
-    open(STDOUT, ">&STDERR")
-      or die "Could not redirect STDOUT to STDERR\n";
-    exec(@command);
-    die "Could not exec '@command': $!\n";
-  } else {
-    die "Could not fork: $!\n";
-  }
-  my $kid = waitpid($rsync_pid, 0);
-  if ($kid != $rsync_pid) {
-    die "waitpid returned $kid\n";
-  } elsif ($?) {
-    Slack::check_system_exit(@command);
-  }
+  Slack::wrap_rsync(@command);
 }
 
 # This just takes the base role, and chowns/chmods everything under it to

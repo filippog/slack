@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Test::More tests => 38;
+use Test::More tests => 41;
 
 BEGIN {
     chdir 'test' if -d 'test';
@@ -12,7 +12,7 @@ BEGIN {
 use test_util;
 
 # Make sure all the expected funtions are there
-can_ok("Slack", qw(default_usage read_config get_system_exit check_system_exit get_options));
+can_ok("Slack", qw(default_usage read_config get_system_exit check_system_exit get_options prompt find_files_to_install wrap_rsync wrap_rsync_fh));
 
 # default_usage()
 {
@@ -242,4 +242,41 @@ can_ok("Slack", qw(default_usage read_config get_system_exit check_system_exit g
         like($versiontext, qr/^slack version [\d\.]+$/, 'get_options --version output')
     }
 }
+ 
 
+# prompt
+# difficult to test
+
+# find_files_to_install
+# Some of the later functional tests will test this.
+
+# wrap_rsync
+{
+    eval "Slack::wrap_rsync('true');";
+    is($@, '', 'wrap_rsync no exception');
+
+    eval "Slack::wrap_rsync('false');";
+    like($@, qr#'false' exited 1\b#, 'wrap_rsync exit false');
+}
+
+# wrap_rsync_fh
+{
+    my $tmpfile = $test_util::TEST_TMPDIR . '/output';
+    my $test_text = "test\n";
+
+    my @command = ('/bin/sh', '-c', "cat > $tmpfile");
+    my ($fh) = Slack::wrap_rsync_fh(@command);
+    print $fh $test_text, "\n";
+    close($fh)
+        or die "'@command' failed!";
+
+    open($fh, '<', $tmpfile)
+        or die "could not open $tmpfile";
+    my $line = <$fh>;
+    close($fh)
+        or die "could not close $tmpfile";
+
+    is($line, $test_text, 'wrap_rsync_fh cat test');
+    unlink($tmpfile)
+        or die "could not unlink $tmpfile";
+}

@@ -315,4 +315,55 @@ sub find_files_to_install ($$$) {
   );
 }
 
+# Runs rsync with the necessary redirection to its filehandles
+sub wrap_rsync (@) {
+  my @command = @_;
+  my ($pid);
+
+  if ($pid = fork) {
+    # Parent
+  } elsif (defined $pid) {
+    # Child
+    open(STDIN, "<", "/dev/null")
+      or die "Could not redirect STDIN from /dev/null\n";
+    # This redirection is necessary because rsync sends
+    #   verbose output to STDOUT
+    open(STDOUT, ">&STDERR")
+      or die "Could not redirect STDOUT to STDERR\n";
+    exec(@command);
+    die "Could not exec '@command': $!\n";
+  } else {
+    die "Could not fork: $!\n";
+  }
+
+  my $kid = waitpid($pid, 0);
+  if ($kid != $pid) {
+    die "waitpid returned $kid\n";
+  } elsif ($?) {
+    Slack::check_system_exit(@command);
+  }
+}
+
+# Runs rsync with the necessary redirection to its filehandles, but also
+# returns an FH to stdin and a PID.
+sub wrap_rsync_fh (@) {
+  my @command = @_;
+  my ($fh, $pid);
+
+  if ($pid = open($fh, "|-")) {
+    # Parent
+  } elsif (defined $pid) {
+    # Child
+    # This redirection is necessary because rsync sends
+    #   verbose output to STDOUT
+    open(STDOUT, ">&STDERR")
+      or die "Could not redirect STDOUT to STDERR\n";
+    exec(@command);
+    die "Could not exec '@command': $!\n";
+  } else {
+    die "Could not fork: $!\n";
+  }
+  return($fh, $pid);
+}
+
 1;

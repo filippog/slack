@@ -112,7 +112,6 @@ sub install_files ($) {
   my $source = $opt{stage} . "/roles/" . $role . "/files/";
   my $destination = $opt{root} . "/";
   my @command = (@rsync, $source, $destination);
-  my ($pid, $fh);
 
   if (not -d $source) {
     ($opt{verbose} > 0) and
@@ -129,21 +128,7 @@ sub install_files ($) {
     }
   }
 
-  # Divide into parent (which will make a list of files to install)
-  # and child (which will exec rsync)
-  if ($pid = open($fh, "|-")) {
-    # Parent
-  } elsif (defined $pid) {
-    # Child
-    # This redirection is necessary because rsync sends
-    #   verbose output to STDOUT
-    open(STDOUT, ">&STDERR")
-      or die "Could not redirect STDOUT to STDERR\n";
-    exec(@command);
-    die "Could not exec '@command': $!\n";
-  } else {
-    die "Could not fork: $!\n";
-  }
+  my ($fh) = Slack::wrap_rsync_fh(@command);
 
   select((select($fh), $|=1)[0]);  # Turn on autoflush
 
