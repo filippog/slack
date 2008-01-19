@@ -19,7 +19,7 @@ push @EXPORT, qw($test_config_file %test_config @test_roles $test_hostname);
 
 # Because all the scripts chdir('/'), we need to know the cwd for our configs
 my $TEST_DIR = getcwd;
-$TEST_TMPDIR = getcwd."/tmp";
+$TEST_TMPDIR = $ENV{TEST_TMPDIR};
 $test_hostname = hostname;
  
 $test_config_file = "$TEST_TMPDIR/slack.conf";

@@ -1,6 +1,7 @@
 include ../Makefile.common
 
-TEST_TMPDIR=tmp
+TEST_TMPDIR=$(shell pwd)/tmp
+export TEST_TMPDIR
 
 CONFFILES=slack.conf roles.conf
 TARGETS=$(addprefix $(TEST_TMPDIR)/, $(CONFFILES))
