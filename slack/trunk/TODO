@@ -23,9 +23,6 @@ make slack-getroles use slack-sync, so only slack-sync needs to know about
     how to get stuff from source, and we can more easily add support
     for other roles sources
 
-in slack-sync, run everything from one rsync using --files-from=- like
-  slack-installfiles
-
 in rolediff, feed the files to slack-diff via stdin or something to speed
     things up.
 
@@ -98,7 +95,6 @@ LATER:
 * build in support for heterogenous underlying distros, like subsets have
   (maybe just using subroles)
 
-* Allow easy review of changes before install
 * Nagging email about pending changes
 * Use backup functionality to store original versions of files,
   so we can uninstall
