@@ -3,7 +3,9 @@
 	* src/slack-sync: use --files-from=- to do the whole sync at once. 
 	    On my systems for a 15-role sync this cuts the time from
 	    4-5 sec to 0.4-0.5 sec.
-	* test/*: unittest updates
+	* test/*: unittest updates, change handling of temp dir
+	* Slack.pm: wrap_rsync() and wrap_rsync_fh() replace some duplicated
+	    code in the backends.
 	
 2008-01-14  Alan Sundell  <alan@sundell.net>
 	* Version 0.15.0
