@@ -38,6 +38,9 @@ Slack.pm: in find_files_to_install(), probably better to hand the callback a
 
 make run_backend() do the printing to stderr and dereferencing backend flags
 
+make slack-getroles work for non-superusers (by caching the role list in /tmp
+    or something)
+
 write unit tests for slack-stage changes (--subdir support)
 more unit tests for slack-diff
     we can use fakeroot if avail and skip some tests if non-root
