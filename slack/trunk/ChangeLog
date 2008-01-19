@@ -1,5 +1,8 @@
 2008-01-18  Alan Sundell  <alan@sundell.net>
 	* Makefile: minor changes to 'dist' target
+	* src/slack-sync: use --files-from=- to do the whole sync at once. 
+	    On my systems for a 15-role sync this cuts the time from
+	    4-5 sec to 0.4-0.5 sec.
 	
 2008-01-14  Alan Sundell  <alan@sundell.net>
 	* Version 0.15.0
