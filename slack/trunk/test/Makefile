@@ -9,8 +9,10 @@ all: $(TARGETS)
 
 install install-bin install-conf install-lib install-man: all
 
-$(TEST_TMPDIR)/%.conf: %.conf.template gen_config_file
+$(TEST_TMPDIR):
 	mkdir -p $(TEST_TMPDIR)
+
+$(TEST_TMPDIR)/%.conf: %.conf.template gen_config_file $(TEST_TMPDIR)
 	./gen_config_file $< $@
 
 clean:
