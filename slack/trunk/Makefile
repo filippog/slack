@@ -20,11 +20,11 @@ deb:
 	ls -l ../slack_*_all.deb
 
 dist: distclean
-	mkdir ../$(distdir)
+	mkdir -p ../$(distdir)
 	rsync -a --exclude=CVS --delete-excluded . ../$(distdir)/
 	chmod -R a+rX ../$(distdir)
 	cd .. ; \
-	    tar cvfp $(distdir).tar $(distdir)
+	    tar cpf $(distdir).tar $(distdir)
 	rm -rf ../$(distdir)
 	gzip -9f ../$(distdir).tar
 	chmod a+r ../$(distdir).tar.gz
