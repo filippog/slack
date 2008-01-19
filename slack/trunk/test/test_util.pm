@@ -22,10 +22,10 @@ my $TEST_DIR = getcwd;
 $TEST_TMPDIR = getcwd."/tmp";
 $test_hostname = hostname;
  
-$test_config_file = "$TEST_DIR/slack.conf";
+$test_config_file = "$TEST_TMPDIR/slack.conf";
 %test_config = (
     'source' => "$TEST_DIR/testsource",
-    'role-list' => "$TEST_DIR/roles.conf",
+    'role-list' => "$TEST_TMPDIR/roles.conf",
     'cache' => "$TEST_TMPDIR/cache",
     'stage' => "$TEST_TMPDIR/stage",
     'root' => "$TEST_TMPDIR/root",

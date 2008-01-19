@@ -2,13 +2,15 @@ include ../Makefile.common
 
 TEST_TMPDIR=tmp
 
-TARGETS=slack.conf roles.conf
+CONFFILES=slack.conf roles.conf
+TARGETS=$(addprefix $(TEST_TMPDIR)/, $(CONFFILES))
 
 all: $(TARGETS)
 
 install install-bin install-conf install-lib install-man: all
 
-%.conf: %.conf.template gen_config_file
+$(TEST_TMPDIR)/%.conf: %.conf.template gen_config_file
+	mkdir -p $(TEST_TMPDIR)
 	./gen_config_file $< $@
 
 clean:
