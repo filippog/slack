@@ -1,5 +1,5 @@
 Name:		slack
-Version:	0.15.0
+Version:	0.15.1
 Release:	1
 Summary:	slack configuration management tool
 Group:		System Environment/Libraries
@@ -62,6 +62,10 @@ if [ $1 = 0 ] ; then
 fi
 
 %changelog
+* Sat Jan 19 2008 Alan Sundell <alan@sundell.net> 0.15.1-1
+- New upstream source (see ChangeLog).
+    performance improvement for slack-sync
+
 * Mon Jan 14 2008 Alan Sundell <alan@sundell.net> 0.15.0-1
 - New upstream source (see ChangeLog).
     three new options:

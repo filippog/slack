@@ -1,3 +1,6 @@
+2008-01-19  Alan Sundell  <alan@sundell.net>
+	* Version 0.15.1
+
 2008-01-18  Alan Sundell  <alan@sundell.net>
 	* Makefile: minor changes to 'dist' target
 	* src/slack-sync: use --files-from=- to do the whole sync at once. 

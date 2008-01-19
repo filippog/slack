@@ -14,7 +14,7 @@ use File::Find;
 
 use base qw(Exporter);
 use vars qw($VERSION @EXPORT @EXPORT_OK $DEFAULT_CONFIG_FILE);
-$VERSION = '0.15.0';
+$VERSION = '0.15.1';
 @EXPORT    = qw();
 @EXPORT_OK = qw();
 
