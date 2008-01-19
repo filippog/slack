@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Test::More tests => 37;
+use Test::More tests => 38;
 
 BEGIN {
     chdir 'test' if -d 'test';
@@ -12,7 +12,7 @@ BEGIN {
 use test_util;
 
 # Make sure all the expected funtions are there
-can_ok("Slack", qw(default_usage read_config check_system_exit get_options));
+can_ok("Slack", qw(default_usage read_config get_system_exit check_system_exit get_options));
 
 # default_usage()
 {
@@ -30,23 +30,23 @@ can_ok("Slack", qw(default_usage read_config check_system_exit get_options));
     is_deeply(\%test_config, $opt, "read_config keys");
 }
 
-# check_system_exit()
+# get_system_exit()
 {
     # clear variables
     $! = 0;
     $? = 0;
 
     system('true');
-    eval "Slack::check_system_exit('');";
-    like($@, qr#Unknown error#, "check_system_exit exit true");
+    eval "Slack::get_system_exit('');";
+    like($@, qr#Unknown error#, "get_system_exit exit true");
 
     system('false');
-    eval "Slack::check_system_exit('');";
-    like($@, qr#'' exited 1\b#, "check_system_exit exit false");
+    my $ret = Slack::get_system_exit('');
+    is($ret, 1);
 
     system('kill -TERM $$');
-    eval "Slack::check_system_exit('');";
-    like($@, qr#'' caught sig 15\b#, "check_system_exit signal");
+    eval "Slack::get_system_exit('');";
+    like($@, qr#'' caught sig 15\b#, "get_system_exit signal");
 
     SKIP: {
         # see if we can set core limit
@@ -59,10 +59,20 @@ can_ok("Slack", qw(default_usage read_config check_system_exit get_options));
                 or skip "Could not mkdir $coresdir", 1;
         }
         system("cd $coresdir && ulimit -c 1024 && kill -SEGV \$\$");
-        eval "Slack::check_system_exit('');";
+        eval "Slack::get_system_exit('');";
         system("rm -rf $coresdir");
-        like($@, qr#'' dumped core\b#, "check_system_exit coredump");
+        like($@, qr#'' dumped core\b#, "get_system_exit coredump");
     };
+}
+
+# check_system_exit
+{
+    $! = 0;
+    $? = 0;
+
+    system('false');
+    eval "Slack::check_system_exit('');";
+    like($@, qr#'' exited 1\b#, "check_system_exit exit false");
 }
 
 # get_options()
