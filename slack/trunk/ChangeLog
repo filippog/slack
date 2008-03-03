@@ -3,6 +3,10 @@
 	    Pollock happy; make a separate tarball for the (suggested) debian
 	    directory, to make me happy until his debian patch becomes
 	    available
+	* src/Slack.pm, test/01_module.t: apply Steve Atwell's get_system_exit
+	    patch.  This uses the POSIX macros for exit statues, makes the
+	    tests work on OpenBSD, and removes the bit that checks core dumps,
+	    since it was kind of silly and awkward to test, anyway.
 
 2008-01-19  Alan Sundell  <alan@sundell.net>
 	* Version 0.15.1

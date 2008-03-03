@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Test::More tests => 41;
+use Test::More tests => 40;
 
 BEGIN {
     chdir 'test' if -d 'test';
@@ -44,25 +44,9 @@ can_ok("Slack", qw(default_usage read_config get_system_exit check_system_exit g
     my $ret = Slack::get_system_exit('');
     is($ret, 1);
 
-    system('kill -TERM $$');
+    system('kill -KILL $$');
     eval "Slack::get_system_exit('');";
-    like($@, qr#'' caught sig 15\b#, "get_system_exit signal");
-
-    SKIP: {
-        # see if we can set core limit
-        skip "can't set ulimit -c", 1
-            unless (system("ulimit -c 1024 2> /dev/null") == 0);
-
-        my $coresdir = "./_cores";
-        if (not -d $coresdir) {
-            (system("mkdir", "-p", $coresdir) == 0)
-                or skip "Could not mkdir $coresdir", 1;
-        }
-        system("cd $coresdir && ulimit -c 1024 && kill -SEGV \$\$");
-        eval "Slack::get_system_exit('');";
-        system("rm -rf $coresdir");
-        like($@, qr#'' dumped core\b#, "get_system_exit coredump");
-    };
+    like($@, qr#'' caught sig 9\b#, "get_system_exit signal");
 }
 
 # check_system_exit

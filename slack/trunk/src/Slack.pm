@@ -11,6 +11,7 @@ require 5.006;
 use strict;
 use Carp qw(cluck confess croak);
 use File::Find;
+use POSIX qw(WIFEXITED WEXITSTATUS WIFSIGNALED WTERMSIG);
 
 use base qw(Exporter);
 use vars qw($VERSION @EXPORT @EXPORT_OK $DEFAULT_CONFIG_FILE);
@@ -148,14 +149,15 @@ sub read_config (%) {
 # croaks if anything weird happened.
 sub get_system_exit (@) {
   my @command = @_;
-  if ($? & 128) {
-    croak "'@command' dumped core";
+
+  if (WIFEXITED($?)) {
+    my $exit = WEXITSTATUS($?);
+    return $exit if $exit;
   }
-  if (my $sig = $? & 127) {
+  if (WIFSIGNALED($?)) {
+    my $sig = WTERMSIG($?);
     croak "'@command' caught sig $sig";
   }
-  my $exit = $? >> 8;
-  return $exit if $exit;
   if ($!) {
     croak "Syserr on system '@command': $!";
   }
