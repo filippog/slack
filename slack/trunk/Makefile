@@ -21,13 +21,15 @@ deb:
 
 dist: distclean
 	mkdir -p ../$(distdir)
-	rsync -a --exclude=CVS --delete-excluded . ../$(distdir)/
+	rsync -a --exclude=CVS --exclude='*.swp' --delete-excluded \
+	    . ../$(distdir)/
 	chmod -R a+rX ../$(distdir)
 	cd .. ; \
-	    tar cpf $(distdir).tar $(distdir)
+	    tar -cp --exclude=debian -f $(distdir).tar $(distdir) ; \
+	    tar -cp -f $(distdir)-debian.tar $(distdir)/debian
 	rm -rf ../$(distdir)
-	gzip -9f ../$(distdir).tar
-	chmod a+r ../$(distdir).tar.gz
-	@ls -l ../$(distdir).tar.gz
+	gzip -9f ../$(distdir).tar ../$(distdir)-debian.tar
+	chmod a+r ../$(distdir).tar.gz ../$(distdir)-debian.tar.gz
+	@ls -l ../$(distdir).tar.gz ../$(distdir)-debian.tar.gz
 
 check: test

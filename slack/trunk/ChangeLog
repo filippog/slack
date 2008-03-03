@@ -1,3 +1,9 @@
+2008-03-02  Alan Sundell  <alan@sundell.net>
+	* Makefile: remove debian directory from tarball, to make Andrew
+	    Pollock happy; make a separate tarball for the (suggested) debian
+	    directory, to make me happy until his debian patch becomes
+	    available
+
 2008-01-19  Alan Sundell  <alan@sundell.net>
 	* Version 0.15.1
 
