@@ -7,6 +7,8 @@
 	    patch.  This uses the POSIX macros for exit statues, makes the
 	    tests work on OpenBSD, and removes the bit that checks core dumps,
 	    since it was kind of silly and awkward to test, anyway.
+	* src/Makefile: another OpenBSD patch from Steve Atwell -- don't
+	    specify -p with -d when using install (doesn't make sense, anyway)
 
 2008-01-19  Alan Sundell  <alan@sundell.net>
 	* Version 0.15.1

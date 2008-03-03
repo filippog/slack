@@ -17,8 +17,8 @@ install-bin: all
 	@set -ex;\
 	for i in $(BACKENDS); do \
 	$(INSTALL) $$i $(DESTDIR)$(slack_libexecdir); done
-	$(INSTALL) -p -d -m $(PRIVDIRMODE) $(DESTDIR)$(slack_localstatedir)
-	$(INSTALL) -p -d -m $(PRIVDIRMODE) $(DESTDIR)$(slack_localcachedir)
+	$(INSTALL) -d -m $(PRIVDIRMODE) $(DESTDIR)$(slack_localstatedir)
+	$(INSTALL) -d -m $(PRIVDIRMODE) $(DESTDIR)$(slack_localcachedir)
 
 install-conf: all
 	$(MKDIR) $(DESTDIR)$(sysconfdir)
