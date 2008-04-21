@@ -10,3 +10,8 @@ Mikal Still: nagged me near-daily to license the damn thing and put it
 David Lowry: fixed my hacky spec file
 Googlers: gave me feature requests, bug reports, many of which I dutifully
           filed in the TODO file and haven't fixed yet :/
+Robert Flemming and Chris Heiser: slack-diff install fix
+Gordon Messmer: more spec fixes
+Steve Atwell: OpenBSD fixes
+Andy Pollock: Debian maintainer
+Gustavo Franco e Pereira Braga: set up the code.google.com site
