@@ -12,16 +12,18 @@ License:
   See the file COPYING.
 
 Getting slack:
-  http://www.sundell.net/~alan/projects/slack/
+  http://code.google.com/p/slack/
 
 Documentation:
   Not much, but there's some in doc/
 
 Mailing list:
-    Sign up at http://groups.google.com/group/slack-users
+  Sign up at http://groups.google.com/group/slack-users
 
 Reporting problems:
-  Send an email to <sundell@gmail.com>.  Probably want to put
-  "slack" in the subject and be patient for replies. :)
+  Use the mailing list above.
+ 
+  If you're shy, you can send an email to <sundell@gmail.com>, but then you
+  probably want to put "slack" in the subject and be patient for replies. :)
 
 $Id$
