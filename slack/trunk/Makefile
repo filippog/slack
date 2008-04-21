@@ -21,7 +21,7 @@ deb:
 
 dist: distclean
 	mkdir -p ../$(distdir)
-	rsync -a --exclude=CVS --exclude='*.swp' --delete-excluded \
+	rsync -a --exclude=.svn --exclude='*.swp' --delete-excluded \
 	    . ../$(distdir)/
 	chmod -R a+rX ../$(distdir)
 	cd .. ; \

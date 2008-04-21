@@ -1,3 +1,6 @@
+2008-04-18  Alan Sundell  <sundell@gmail.com>
+	* Makefile: fix 'dist' target to work with svn
+
 2008-03-02  Alan Sundell  <alan@sundell.net>
 	* Makefile: remove debian directory from tarball, to make Andrew
 	    Pollock happy; make a separate tarball for the (suggested) debian
