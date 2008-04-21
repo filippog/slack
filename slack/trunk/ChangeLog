@@ -1,3 +1,6 @@
+2008-04-20  Alan Sundell  <sundell@gmail.com>
+	* Version 0.15.2
+
 2008-04-18  Alan Sundell  <sundell@gmail.com>
 	* Makefile: fix 'dist' target to work with svn
 
