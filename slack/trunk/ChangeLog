@@ -1,5 +1,7 @@
 2008-08-01  Alan Sundell  <sundell@gmail.com>
-	* Fix horrible system-wiping (but thankfully rare) prerm bug.
+	* slack.spec, debian/prerm: Fix horrible system-wiping (but
+	    thankfully rare) prerm bug.  Thanks to Serge de Souza for
+	    spotting this.
 
 2008-04-20  Alan Sundell  <sundell@gmail.com>
 	* Version 0.15.2
