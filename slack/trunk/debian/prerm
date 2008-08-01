@@ -5,11 +5,20 @@
 set -e
 
 if [ "$1" = "purge" -o "$1" = "remove" ]; then
-        . /etc/slack.conf
-        # purge the cache
+    # We hope, here, that you have not set CACHE or STAGE to something stupid
+    # in slack.conf.  Just in case they are in the environment for some other
+    # reason, unset them.
+    unset CACHE
+    unset STAGE
+    . /etc/slack.conf
+    # purge the cache
+    if [ -n "$CACHE" ] ; then
         rm -rf "$CACHE"/*
-        # remove the stage
+    fi
+    # remove the stage
+    if [ -n "$STAGE" ] ; then
         rm -rf "$STAGE"
+    fi
 fi
 
 #DEBHELPER#
