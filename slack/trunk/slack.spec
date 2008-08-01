@@ -1,6 +1,6 @@
 Name:		slack
 Version:	0.15.2
-Release:	1
+Release:	2
 Summary:	slack configuration management tool
 Group:		System Environment/Libraries
 License:	GPL
@@ -56,12 +56,26 @@ rm -rf %{buildroot}
 
 %preun
 if [ $1 = 0 ] ; then
+    # We hope, here, that you have not set CACHE or STAGE to something stupid
+    # in slack.conf.  Just in case they are in the environment for some other
+    # reason, unset them.
+    unset CACHE
+    unset STAGE
     . /etc/slack.conf
-    rm -rf "$CACHE"/*
-    rm -rf "$STAGE"
+    # purge the cache
+    if [ -n "$CACHE" ] ; then
+        rm -rf "$CACHE"/*
+    fi
+    # remove the stage
+    if [ -n "$STAGE" ] ; then
+        rm -rf "$STAGE"
+    fi
 fi
 
 %changelog
+* Fri Aug  1 2008 Alan Sundell <sundell@gmail.com> 0.15.2-2
+- Fix horrible system-wiping (but thankfully rare) preun bug.
+
 * Sun Apr 20 2008 Alan Sundell <sundell@gmail.com> 0.15.2-1
 - New upstream source (see ChangeLog).
     packaging fixes
