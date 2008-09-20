@@ -25,6 +25,7 @@ realclean: clean
 distclean: clean
 
 test: clean all
+	./completion.sh
 	perl -MTest::Harness -e 'runtests(<*.t>)'
 
 check: test

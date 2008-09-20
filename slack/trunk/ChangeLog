@@ -1,3 +1,8 @@
+2008-09-20  Alan Sundell  <sundell@gmail.com>
+	* src/slack_completion, Makefile.common, src/Makefile, test/Makefile,
+	    test/completion.sh: add support (and tests) for bash programmable
+	    completion for the slack command
+
 2008-08-01  Alan Sundell  <sundell@gmail.com>
 	* slack.spec, debian/prerm: Fix horrible system-wiping (but
 	    thankfully rare) prerm bug.  Thanks to Serge de Souza for

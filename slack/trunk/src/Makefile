@@ -23,6 +23,9 @@ install-bin: all
 install-conf: all
 	$(MKDIR) $(DESTDIR)$(sysconfdir)
 	$(INSTALL) -m 0644 slack.conf $(DESTDIR)$(sysconfdir)
+	$(MKDIR) $(DESTDIR)$(bash_completiondir)
+	$(INSTALL) -m 0644 slack_completion \
+	    $(DESTDIR)$(bash_completiondir)/slack
 
 install-lib: all
 	$(MKDIR) $(DESTDIR)$(slack_libdir)

@@ -9,6 +9,7 @@ DESTDIR		=
 prefix		= /
 exec_prefix	= /usr
 sysconfdir	= ${prefix}/etc
+bash_completiondir	= ${sysconfdir}/bash_completion.d
 mandir		= ${exec_prefix}/share/man
 bindir		= ${exec_prefix}/bin
 sbindir		= ${exec_prefix}/sbin
