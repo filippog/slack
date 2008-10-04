@@ -1,4 +1,4 @@
-#summary Subroles
+#summary How subroles work
 #labels Phase-Deploy
 
 = Introduction =
