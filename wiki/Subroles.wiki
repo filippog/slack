@@ -35,13 +35,12 @@ At first, it was tempting to use subdirectories of the main role directory or th
 
 We do this overlay for files because the filesystem doesn't already have this functionality.
 
-The programming languages one can use for your scripts, however, have a wealth of ways of providing this functionality, and any attempt on our part to provide it would pale by comparison.
+The programming languages one can use for your scripts, however, have a wealth of ways of providing this functionality, and any attempt on our part to provide it would pale by comparison.  We're also intentionally agnostic about what language your scripts are written in (we just `exec()` them), so we can't do any fancy things to use your language's features automatically.
 
-For example, suppose we called `preinstall.subrole` after `preinstall`, and your `preinstall` called `rm somefile`.  How would you "override" this code in your second script?  The file is gone.
+For example, suppose we called a `preinstall.subrole` script after the `preinstall` script, and your `preinstall` script called `rm somefile`.  How would you "override" this code in your second script?  The file is already gone.
 
-However, since we pass scripts the full role name, you can use conditionals or OO inheritance in your `preinstall` script to handle this situation, and much more complicated ones.
+However, since we pass scripts the full role name, you can use conditionals or OO inheritance in your `preinstall` script to handle this situation, as well as much more complicated ones.
 
-We're also intentionally agnostic about what language your scripts are written in (we just `exec()` them), so we can't do any fancy things to use your language's features automatically.
 
 = Examples =
 
@@ -64,7 +63,7 @@ We're also intentionally agnostic about what language your scripts are written i
    GOCRAZY=true
    BBQ=delicious
 }}}
-
+ 
 In this example, we have many possible roles.  No matter which we install, the contents of `commonconfig` will be the same, because it is inherited from the parent role.  Similarly, both `myrole.bar` and `myrole.bar.baz` will get `barconfig`.
 
 The value of GOCRAZY in `daemon.conf`, however, will vary, depending on what role name we pass to `slack` or put in `roles.conf`:
@@ -125,7 +124,12 @@ We have a role, let's say for a cluster of generic web servers in our company's 
 
 For the sake of this example, the content of the website is being managed by some means outside our scope; probably it's all mode 777 on some NFS share, but that's a problem for another day.  Remember, slack is designed to distribute configuration, not content or software.
 
-All is going well, but then we open a new site in Hyderabad, and we want a cluster of webservers there with a slightly different config.  So we make a subrole, and now things look like this:
+All is going well, but then we open a new site in Hyderabad, and we want a cluster of webservers there with a slightly different config.
+
+
+=== Refactoring Example: First Take ===
+
+So we make a subrole, and now things look like this:
 
 {{{
 .../roles/webserver/files/etc/httpd/httpd.conf
@@ -147,11 +151,11 @@ web1.hyd.example.com: webserver.hyd
 
 When we run `slack` on `web1.hyd`, it will get the `webserver.hyd` role, and the `httpd.conf` from there.  This is much better than making an entirely separate role, because we get to re-use `php.ini` and our `preinstall` script.
 
-But hold on, we've done something stupid here -- the differences between the two sites are minor, and most of `httpd.conf` does not vary between the two sites.  Now, when we want to make a change to that invariant portion of the config, we've got to remember to make it in both places.  We probably won't, so the two files will drift over time, and that will make for sad sysadmins.
+But hold on, we've done something stupid here -- the the two sites are only slightly different; most of `httpd.conf` does not vary between the two sites.  Now, when we want to make a change to that invariant portion of the config, we've got to remember to make it in both places.  Someone probably won't remember, so the two files will drift over time, and that will make for sad sysadmins.
 
-=== File Extraction ===
+=== Refactoring Example: Extraction ===
 
-We need to refactor -- instead of having all the config in one file, we should break out the variant configs into smaller files, like so:
+We need to refactor -- instead of having all the config in one file, we should extract the variant configs into smaller files, like so:
 
 {{{
 .../roles/webserver/files/etc/httpd/httpd.conf
@@ -163,9 +167,11 @@ We need to refactor -- instead of having all the config in one file, we should b
 
 Now we can have the big `httpd.conf` include the tiny `site.conf`, and we can re-use the config in `httpd.conf` between the two sites, making for happy sysadmins.
 
-It is a little annoying that ("for historical reasons") the Hyderabad subrole is like a second-class citizen compared to the main role for San Francisco.  But read on...
+Some programs make this easy to do with their configuration with include functionality or conf.d directories; others don't.  For the latter, it's usually pretty easy to build the config with a script (or `cat`).
 
-=== Type Generalization ===
+Back to our example, it is a little annoying that ("for historical reasons") the Hyderabad subrole is like a second-class citizen compared to the main role for San Francisco.  But read on...
+
+=== Refactoring Example: Type Generalization ===
 
 Let's suppose for some reason we've got a files in our main role that don't need to appear in our subrole.  Maybe we've got SSL certs or something that have file names based on the domain name, like so:
 
@@ -190,4 +196,18 @@ The `www.sfo` cert is going to get installed on the `www.hyd` servers, even thou
 .../roles/webserver/scripts/preinstall
 }}}
 
-We now have a generic `webserver` role that's just a stub, but contains two peer subroles that each contain only the specific things needed to make each site work.  This will come in handy as online pet toy ordering takes off and we add more and more sites.
+Now, our roles.conf looks like this:
+
+{{{
+web1.sfo.example.com: webserver.sfo
+web2.sfo.example.com: webserver.sfo
+[...]
+web1.hyd.example.com: webserver.hyd
+web1.hyd.example.com: webserver.hyd
+[...]
+}}}
+
+
+We now have a generic `webserver` role that's just a stub and isn't used anywhere, but contains all our common config.  We have two peer subroles that each contain only the specific things needed to make each site work.
+
+That's much prettier, and will come in handy as online pet toy ordering really takes off and we add more and more sites around the world.
