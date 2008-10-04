@@ -3,7 +3,7 @@
 
 = Introduction =
 
-Subroles in slack are just an example of single [http://en.wikipedia.org/wiki/Inheritance_(computer_science) inheritance], applied to the `files` directory.
+The implementation of subroles in slack is an example of [http://en.wikipedia.org/wiki/Inheritance_(computer_science) inheritance], applied to the contents of the `files` directory.
 
 == Features ==
 
@@ -18,7 +18,7 @@ Subroles in slack are just an example of single [http://en.wikipedia.org/wiki/In
   * This does not apply to the `scripts` directory of a role, just the `files` directory.  Scripts can take different actions for subroles based on the role name passed as the first argument (see Script Example)
   * Files in the main role can not be removed in this manner (if want to do this, you should probably refactor).
   * Files are completely replaced (not patched).
-  * Subroles can only inherit from one parent role.
+  * Subroles can only inherit from one parent role (single inheritance).
 
 
 = Discussion =
