@@ -1,0 +1,193 @@
+#summary Subroles
+#labels Phase-Deploy
+
+= Introduction =
+
+Subroles in slack are just an example of single [http://en.wikipedia.org/wiki/Inheritance_(computer_science) inheritance], applied to the `files` directory.
+
+== Features ==
+
+  * Subroles are denoted by dots in the role name.  For example, `foo.bar` is a subrole of the role `foo`, whereas `foobar` and `foo-bar` are completely separate roles.
+  * Files in a role's `files.subrole` directory override files in the parent role's `files` directory when the subrole is installed.
+  * New files can also be added in a subrole (files that do not exist in a main role).
+  * The overlay of files is done by `slack-stage` in slack's "`STAGE`" directory, before install time, so the overridden files from the parent role will not appear in the `ROOT` filesystem.
+  * The files directories for a subrole can be missing or empty (in which case they have no effect on the files)
+
+== Restrictions ==
+
+  * This does not apply to the `scripts` directory of a role, just the `files` directory.  Scripts can take different actions for subroles based on the role name passed as the first argument (see Script Example)
+  * Files in the main role can not be removed in this manner (if want to do this, you should probably refactor).
+  * Files are completely replaced (not patched).
+  * Subroles can only inherit from one parent role.
+
+
+= Discussion =
+
+== Why the Flat Layout? ==
+
+At first, it was tempting to use subdirectories of the main role directory or the files directory to represent subroles.  In some ways, this would have made implementation easier.  But we decided not to, for two reasons:
+
+  # It would lead to namespace collisions.  If we used subdirectories of the files directory, you might run into trouble if someone tried to install `myrole.etc`.  If we used subdirectories of the main directory, we'd need to reserve names that conflicted with other directories in there (`files` and `scripts`), or protect those other directories with some special naming convention.
+  # If you have lots of subroles, it makes it hard to see what's going on.
+
+
+== Why Only Files and not Scripts? ==
+
+We do this overlay for files because the filesystem doesn't already have this functionality.
+
+The programming languages one can use for your scripts, however, have a wealth of ways of providing this functionality, and any attempt on our part to provide it would pale by comparison.
+
+For example, suppose we called `preinstall.subrole` after `preinstall`, and your `preinstall` called `rm somefile`.  How would you "override" this code in your second script?  The file is gone.
+
+However, since we pass scripts the full role name, you can use conditionals or OO inheritance in your `preinstall` script to handle this situation, and much more complicated ones.
+
+We're also intentionally agnostic about what language your scripts are written in (we just `exec()` them), so we can't do any fancy things to use your language's features automatically.
+
+= Examples =
+
+== File Layout Example ==
+
+{{{
+.../roles/myrole/files/etc/commonconfig:
+   blah blah
+.../roles/myrole/files/etc/daemon.conf:
+   GOCRAZY=false
+.../roles/myrole/files.foo/etc/daemon.conf:
+   GOCRAZY=true
+.../roles/myrole/files.bar/etc/daemon.conf:
+   GOCRAZY=maybe
+.../roles/myrole/files.bar/etc/barconfig:
+   blah blah
+.../roles/myrole/files.bar.baz/etc/daemon.conf:
+   GOCRAZY=false
+.../roles/myrole/files.omg.bbq/etc/daemon.conf:
+   GOCRAZY=true
+   BBQ=delicious
+}}}
+
+In this example, we have many possible roles.  No matter which we install, the contents of `commonconfig` will be the same, because it is inherited from the parent role.  Similarly, both `myrole.bar` and `myrole.bar.baz` will get `barconfig`.
+
+The value of GOCRAZY in `daemon.conf`, however, will vary, depending on what role name we pass to `slack` or put in `roles.conf`:
+
+  # myrole: false
+  # myrole.foo: true
+  # myrole.bar: maybe
+  # myrole.bar.baz: false
+  # myrole.omg: false
+  # myrole.omg.bbq: true
+
+Note that it's OK that we don't have a `daemon.conf` for the `myrole.omg` role, or even a `files.omg` directory.  It inherits the file from `myrole`.
+
+== Script Example ==
+
+Scripts get the role name passed in as the first argument, and can use that to make decisions.  Obviously, the possibilities are wide open for you here; we're just going to present a simple example.
+
+If you're using shell scripts, you can do something like this:
+
+{{{
+#!/bin/sh
+
+# do some common code here
+
+case $1 in
+  myrole)
+    # only run for bare parent role
+    ;;
+  myrole.foo)
+    # only run for myrole.foo, not myrole.foo.fred
+    ;;
+  myrole.bar*)
+    # sloppy: catches myrole.bar, myrole.bar.baz, but also myrole.bars
+    # Usually not a problem, though
+    ;;
+  myrole.quux|myrole.quux.*)
+    # more precisely matches subroles of myrole.quux
+    ;;
+esac
+
+# more common code, maybe using some variables assigned in the case statement above
+}}}
+
+
+== Refactoring Example ==
+
+Note: we're presenting a contrived example here, so we're going to do some stupid things to make the lessons clearer.
+
+Suppose we work for a company in San Francisco that's going to sell pet toys, but (get this), on the Internet!  Awesome!  We're getting paid in stock.
+
+We have a role, let's say for a cluster of generic web servers in our company's HQ:
+
+{{{
+.../roles/webserver/files/etc/httpd/httpd.conf
+.../roles/webserver/files/etc/httpd/php.ini
+.../roles/webserver/scripts/preinstall
+}}}
+
+For the sake of this example, the content of the website is being managed by some means outside our scope; probably it's all mode 777 on some NFS share, but that's a problem for another day.  Remember, slack is designed to distribute configuration, not content or software.
+
+All is going well, but then we open a new site in Hyderabad, and we want a cluster of webservers there with a slightly different config.  So we make a subrole, and now things look like this:
+
+{{{
+.../roles/webserver/files/etc/httpd/httpd.conf
+.../roles/webserver/files/etc/httpd/php.ini
+.../roles/webserver/files.hyd/etc/httpd/httpd.conf
+.../roles/webserver/scripts/preinstall
+}}}
+
+Now, our roles.conf looks like this:
+
+{{{
+web1.sfo.example.com: webserver
+web2.sfo.example.com: webserver
+[...]
+web1.hyd.example.com: webserver.hyd
+web1.hyd.example.com: webserver.hyd
+[...]
+}}}
+
+When we run `slack` on `web1.hyd`, it will get the `webserver.hyd` role, and the `httpd.conf` from there.  This is much better than making an entirely separate role, because we get to re-use `php.ini` and our `preinstall` script.
+
+But hold on, we've done something stupid here -- the differences between the two sites are minor, and most of `httpd.conf` does not vary between the two sites.  Now, when we want to make a change to that invariant portion of the config, we've got to remember to make it in both places.  We probably won't, so the two files will drift over time, and that will make for sad sysadmins.
+
+=== File Extraction ===
+
+We need to refactor -- instead of having all the config in one file, we should break out the variant configs into smaller files, like so:
+
+{{{
+.../roles/webserver/files/etc/httpd/httpd.conf
+.../roles/webserver/files/etc/httpd/site.conf
+.../roles/webserver/files/etc/httpd/php.ini
+.../roles/webserver/files.hyd/etc/httpd/site.conf
+.../roles/webserver/scripts/preinstall
+}}}
+
+Now we can have the big `httpd.conf` include the tiny `site.conf`, and we can re-use the config in `httpd.conf` between the two sites, making for happy sysadmins.
+
+It is a little annoying that ("for historical reasons") the Hyderabad subrole is like a second-class citizen compared to the main role for San Francisco.  But read on...
+
+=== Type Generalization ===
+
+Let's suppose for some reason we've got a files in our main role that don't need to appear in our subrole.  Maybe we've got SSL certs or something that have file names based on the domain name, like so:
+
+{{{
+.../roles/webserver/files/etc/httpd/httpd.conf
+.../roles/webserver/files/etc/httpd/site.conf
+.../roles/webserver/files/etc/httpd/php.ini
+.../roles/webserver/files/etc/httpd/ssl/www.sfo.example.com.crt
+.../roles/webserver/files.hyd/etc/httpd/site.conf
+.../roles/webserver/files.hyd/etc/httpd/ssl/www.hyd.example.com.crt
+.../roles/webserver/scripts/preinstall
+}}}
+
+The `www.sfo` cert is going to get installed on the `www.hyd` servers, even though they don't need it.  Again, a little simple refactoring comes to the rescue:
+{{{
+.../roles/webserver/files/etc/httpd/httpd.conf
+.../roles/webserver/files/etc/httpd/php.ini
+.../roles/webserver/files.sfo/etc/httpd/site.conf
+.../roles/webserver/files.sfo/etc/httpd/ssl/www.sfo.example.com.crt
+.../roles/webserver/files.hyd/etc/httpd/site.conf
+.../roles/webserver/files.hyd/etc/httpd/ssl/www.hyd.example.com.crt
+.../roles/webserver/scripts/preinstall
+}}}
+
+We now have a generic `webserver` role that's just a stub, but contains two peer subroles that each contain only the specific things needed to make each site work.  This will come in handy as online pet toy ordering takes off and we add more and more sites.
