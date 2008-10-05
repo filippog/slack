@@ -1,0 +1,6 @@
+# template roles.conf file for testing
+# $Id$
+__HOSTNAME__.com: badrole
+__HOSTNAME__: __ROLES__
+foo.__HOSTNAME__: badrole
+fixedhost.example.com: examplerole

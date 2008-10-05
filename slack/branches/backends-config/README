@@ -1,0 +1,29 @@
+Short Description:
+
+  slack is a configuration management system designed to appeal to lazy
+  admins (like me).  It's an evolution from the usual "put files in some
+  central directory" that is faily common practice.  It's descended from an
+  earlier system I also wrote, called "subsets", and uses a multi-stage
+  rsync to fix some of the problems I had there.
+
+  Basically, it's a glorified wrapper around rsync.
+
+License:
+  See the file COPYING.
+
+Getting slack:
+  http://code.google.com/p/slack/
+
+Documentation:
+  Not much, but there's some in doc/
+
+Mailing list:
+  Sign up at http://groups.google.com/group/slack-users
+
+Reporting problems:
+  Use the mailing list above.
+ 
+  If you're shy, you can send an email to <sundell@gmail.com>, but then you
+  probably want to put "slack" in the subject and be patient for replies. :)
+
+$Id$

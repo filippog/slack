@@ -1,0 +1,105 @@
+#!/bin/bash
+# vim:sw=2
+
+_slack()
+{
+  local cur slack_conf role_list hostname
+  local file_options simple_options sleep_values
+
+  COMPREPLY=()
+  cur=${COMP_WORDS[COMP_CWORD]}
+  prev=${COMP_WORDS[COMP_CWORD-1]}
+
+  simple_options=(
+      -h --help -v --verbose --quiet --no-sync --no-files --no-scripts -n
+      --dry-run -b --backup --version 
+  )
+  file_options=(
+    -C --config -s --source -c --cache -t --stage -r --root
+    --backup-dir --role-list --diff -e --rsh 
+  )
+
+  sleep_values=(60 900 1800 3600)
+
+  # adjust for --option=value options
+  if [[ "$cur" == --*=* ]]; then
+      prev=${cur%%=*}
+      cur=${cur#*=}
+  fi
+
+  if [[ "$cur" == -* ]]; then
+    COMPREPLY=( $( compgen -W "${simple_options[*]} ${file_options[*]} \
+      -H --hostname --preview --sleep" -- $cur ) )
+    return 0
+  fi
+
+  # Handle all the weird options
+  case "$prev" in
+    --preview)
+      COMPREPLY=( $( compgen -W 'simple prompt' -- "$cur" ) )
+      return 0
+      ;;
+    -H|--hostname)
+      # This probably isn't going to be that useful, but whatever ;)
+      COMPREPLY=( $( compgen -A hostname -- "$cur" ) )
+      return 0
+      ;;
+    --sleep)
+      # Try to force people to use a number, here, by completing only to
+      # some sample numbers.  If we return an empty COMPREPLY, readline will
+      # complete on filenames, which would be inappropriate for this option.
+      COMPREPLY=( $(echo ${sleep_values[*]} | tr " " "\n" | grep "^$cur" ||
+        echo ${sleep_values[*]}) )
+      return 0
+      ;;
+  esac
+
+  # For options that can take files, we fall through here to default command
+  # line processing to match files, directories, etc.
+  local opt
+  for opt in "${file_options[@]}" ; do
+    if [ "$prev" == "$opt" ] ; then
+      return 0
+    fi
+  done
+
+  # Remaining options don't take args ($simple_options), so we fall through to
+  # the non-option case: slack roles
+
+  slack_conf=${COMPLETION_SLACK_CONF:-/etc/slack.conf}
+  if [ ! -r "$slack_conf" ] ; then
+    return 0
+  fi
+
+  # We're relying on the cached version from slack-getroles, rather than
+  # calling slack-getroles (which would be a surprising side-effect of hitting
+  # tab).  Of it doesn't exist, we just revert to normal bash completion.
+  role_list=$(awk -F= '/^CACHE/ {print $2}' "$slack_conf")"/_role_list"
+
+  if [ ! -r "$role_list" ] ; then
+    return 0
+  fi
+
+  # If we were really cool, we'd scan back for --hostname options and use
+  # the passed-in value.  But we're not that cool.
+  if [ -n "$HOSTNAME" ] ; then
+    hostname="$HOSTNAME"
+  elif type hostname &>/dev/null ; then
+    hostname=$(hostname)
+  else
+    return 0
+  fi
+
+  if ! [[ "$cur" =~ / ]] ; then
+    COMPREPLY=( $( awk "/^$hostname:/"' { for (i=2; i<=NF; i++) { if ($i ~ /^'"${cur//./\\.}"'/) { print $i } } }' "$role_list" ) )
+  fi
+
+  return 0
+} 
+
+# We let completion file through to the default, because there's no way
+# to avoid annoying completion on directories for options that take filenames
+# if we don't.  Side effect is that, for normal arguments, if we don't match a
+# role name, we can match on filenames, which could be undesirable if you have
+# a filename named like a role in your current directory.
+complete -o default -F _slack slack
