@@ -384,4 +384,16 @@ sub wrap_rsync_fh (@) {
   return($fh, $pid);
 }
 
+# Checks that the given role names have a permissible format, croaks if not
+sub assert_valid_role_names (@) {
+  my @roles = (@_);
+  for my $role (@roles) {
+    # Roles MUST begin with a letter.  All else is reserved.
+    if ($role !~ m/^[a-zA-Z]/) {
+      croak "Role '$role' does not begin with a letter!";
+    }
+    # FIXME: Check if slashes work.
+  }
+}
+
 1;

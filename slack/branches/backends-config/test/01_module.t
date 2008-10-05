@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Test::More tests => 42;
+use Test::More tests => 44;
 
 BEGIN {
     chdir 'test' if -d 'test';
@@ -12,7 +12,10 @@ BEGIN {
 use test_util;
 
 # Make sure all the expected funtions are there
-can_ok("Slack", qw(default_usage read_config get_system_exit check_system_exit get_options prompt find_files_to_install wrap_rsync wrap_rsync_fh));
+can_ok("Slack", qw(default_usage read_config get_system_exit check_system_exit
+                   get_options prompt find_files_to_install wrap_rsync
+                   wrap_rsync_fh assert_valid_role_names)
+);
 
 # default_usage()
 {
@@ -297,4 +300,15 @@ can_ok("Slack", qw(default_usage read_config get_system_exit check_system_exit g
     is($line, $test_text, 'wrap_rsync_fh cat test');
     unlink($tmpfile)
         or die "could not unlink $tmpfile";
+}
+
+# assert_valid_role_names
+{
+    eval "Slack::assert_valid_role_names('lower', 'upper',
+                                         'number1', 'zomg spaces')";
+    is($@, '', 'assert_valid_role_names no exception');
+
+    eval "Slack::assert_valid_role_names('ok', '1bad1')";
+    like($@, qr/does not begin with a letter/,
+         'assert_valid_role_names  exception');
 }

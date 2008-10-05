@@ -119,6 +119,9 @@ if ($opt{'dry-run'}) {
 
 # Figure out a place to put backups.  We set the time-specific dir
 # here so that a single run will end up in a single dir. 
+# FIXME: backups from multiple roles clobber each other if we have
+#   a single dir (not that people should have the same file in multiple
+#   roles, but...)
 if ($opt{backup} and $opt{'backup-dir'}) {
   $opt{'backup-dir'} = 
       $opt{'backup-dir'}.
@@ -149,17 +152,7 @@ if (@ARGV) {
     push @roles, split(/\s+/, $output);
   }
 }
-
-# Check role name syntax {{{
-# FIXME: Move this into the module
-# FIXME: Are slashes OK?
-for my $role (@roles) {
-  # Roles MUST begin with a letter.  All else is reserved.
-  if ($role !~ m/^[a-zA-Z]/) {
-    die "Role '$role' does not begin with a letter!";
-  }
-}
-# }}}
+Slack::assert_valid_role_names(@roles);
 
 $opt{verbose} and print STDERR "$PROG: installing roles: @roles\n";
 
