@@ -3,15 +3,42 @@
 
 = Introduction =
 
-The implementation of subroles in slack is an example of [http://en.wikipedia.org/wiki/Inheritance_(computer_science) inheritance], applied to the contents of the `files` directory.
+Subroles in slack are an example of the [http://en.wikipedia.org/wiki/Inheritance_(computer_science) inheritance] design pattern, applied to a tree of files.
+
+== Synopsis ==
+
+{{{
+.../roles/myrole/files/etc/daemon.conf
+.../roles/myrole/files/etc/otherdaemon.conf
+.../roles/myrole/files.foo/etc/daemon.conf
+.../roles/myrole/files.foo.bar/etc/daemon.conf
+.../roles/myrole/files.quux/etc/daemon.conf
+}}}
+
+Slack will install a different `/etc/daemon.conf` when called for `myrole`, `myrole.foo`, `myrole.foo.bar`, or `myrole.quux`, but will install the same `/etc/otherdaemon.conf` every time. 
 
 == Features ==
 
-  * Subroles are denoted by dots in the role name.  For example, `foo.bar` is a subrole of the role `foo`, whereas `foobar` and `foo-bar` are completely separate roles.
-  * Files in a role's `files.subrole` directory override files in the parent role's `files` directory when the subrole is installed.
-  * New files can also be added in a subrole (files that do not exist in a main role).
-  * The overlay of files is done by `slack-stage` in slack's "`STAGE`" directory, before install time, so the overridden files from the parent role will not appear in the `ROOT` filesystem.
-  * The files directories for a subrole can be missing or empty (in which case they have no effect on the files)
+  * Subroles are denoted by dots in a role name passed to slack.
+  For example, `myrole.foo` is a subrole of the role `myrole`, whereas `foo`, `myrolefoo`, and `myrole-foo` are completely separate roles.
+  * There can be any number of subrole levels.
+  For example: `myrole`, `myrole.foo`, `myrole.foo.bar`, and so on.
+  * All subroles live entirely within the directory of the base parent role.  They uses `files` directories with the subrole part of the name appended.
+  For example, for `myrole`, `myrole.foo`, and `myrole.foo.bar`:
+    * The files for `myrole` are in `.../roles/myrole/files`
+    * The files for `myrole.foo` are in `.../roles/myrole/files.foo`
+    * The files for `myrole.foo.bar` are in `.../roles/myrole/files.foo.bar`
+
+  * Files in `myrole/files.foo` override files in the `myrole/files` directory when the subrole `myrole.foo` is installed.
+
+  * Any files not present in the subrole will get inherited from the parent role.
+  For example, `myrole.foo` will get `.../roles/myrole/files/etc/otherdaemon.conf` if `.../roles/myrole/files.foo/etc/otherdaemon.conf` does not exist.
+  * New files can be added in a subrole (files that do not exist in a main role).
+
+  * The `files.foo` directory can be empty or nonexistent, in which case it has no effect on the files from the parent role, and passing either `role` or `role.foo` to slack will do the same thing as far as files are concerned.
+    * You can also have a `files.foo.bar` with no `files.foo`, and still use `role`, `role.foo`, and `role.foo.bar`.
+
+  * The overlay of files is done by `slack-stage` in slack's "`STAGE`" directory, before install time, so there is no window where overridden files from the parent role appear in the `ROOT` filesystem.
 
 == Restrictions ==
 
@@ -30,6 +57,9 @@ At first, it was tempting to use subdirectories of the main role directory or th
   # It would lead to namespace collisions.  If we used subdirectories of the files directory, you might run into trouble if someone tried to install `myrole.etc`.  If we used subdirectories of the main directory, we'd need to reserve names that conflicted with other directories in there (`files` and `scripts`), or protect those other directories with some special naming convention.
   # If you have lots of subroles, it makes it hard to see what's going on.
 
+The layout ends up looking a little weird, because we turn `myrole.foo.bar` into `myrole/files.foo.bar`, thus making the first dot kind of special.  However, alternatives have their problems:
+  # `myrole/files.myrole` and `myrole/files.myrole.foo` would make the simple case (no subroles) more complicated
+  # `myrole/files` and `myrole.foo/files` would not fit the way most people use subroles; they tend to think of them as part of one module, and want them to be kept together in a way unrelated roles are not.
 
 == Why Only Files and not Scripts? ==
 
