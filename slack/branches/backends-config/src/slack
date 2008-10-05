@@ -18,7 +18,7 @@ use sigtrap qw(die untrapped normal-signals
 use File::Path;
 use File::Find;
 use POSIX; # for strftime
-use YAML ();
+use YAML ();  # FIXME: add dependency for this
 
 use constant LIBEXEC_DIR => '/usr/lib/slack';
 use constant LIB_DIR => '/usr/lib/slack';
@@ -103,6 +103,9 @@ Slack::get_options(
     'sleep=i',
   ],
   required_options => [ qw(source cache stage root) ],
+  restricted_options => {
+      preview => [ qw(simple prompt) ],
+  },
   command_line_hash => \%command_line_opt,
   usage => $usage,
 );
@@ -114,15 +117,6 @@ if ($opt{'dry-run'}) {
   $opt{'files'} = 0;
 }
 
-# Preview takes an optional argument.  If no argument is given,
-# it gets "" from getopt.
-# FIXME: Move restrictions like this into the option parser
-if (defined $opt{'preview'}) {
-  if (not grep /^$opt{'preview'}$/, qw(simple prompt)) {
-    die "Unknown preview mode '$opt{'preview'}'!";
-  }
-}
-    
 # Figure out a place to put backups.  We set the time-specific dir
 # here so that a single run will end up in a single dir. 
 if ($opt{backup} and $opt{'backup-dir'}) {

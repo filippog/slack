@@ -70,16 +70,15 @@ Slack::get_options(
   ],
   usage => $usage,
   required_options => [ qw(cache stage root) ],
+  restricted_options => {
+    subdir => [ qw(files scripts) ],
+  },
 );
 
 # Arguments are required
 die "No roles given!\n\n$usage" unless @ARGV;
 
-# We only allow certain values for this option
 if ($opt{subdir}) {
-  unless ($opt{subdir} eq 'files' or $opt{subdir} eq 'scripts') {
-    die "--subdir option must be 'files' or 'scripts'\n\n$usage";
-  }
   # Only do this subdir
   %subdir = ( $opt{subdir} => 1 );
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Test::More tests => 40;
+use Test::More tests => 42;
 
 BEGIN {
     chdir 'test' if -d 'test';
@@ -204,6 +204,40 @@ can_ok("Slack", qw(default_usage read_config get_system_exit check_system_exit g
         );
     };
     like($@, qr/Required option/, "get_options required options");
+
+    # Restricted options
+    #   should work when passed an allowed value
+    eval {
+        local @ARGV = (
+            '--config=/dev/null',
+            '--foo=bar',
+        );
+        $opt = Slack::get_options(
+            command_line_options => [
+                'foo=s',
+            ],
+            restricted_options => {
+                foo => [ qw(bar baz) ],
+            },
+        );
+    };
+    is($@, '', "get_options exception ".$e++);
+    #   ...and fail when passed a bad one
+    eval {
+        local @ARGV = (
+            '--config=/dev/null',
+            '--foo=bad',
+        );
+        $opt = Slack::get_options(
+            command_line_options => [
+                'foo=s',
+            ],
+            restricted_options => {
+                foo => [ qw(bar baz) ],
+            },
+        );
+    };
+    like($@, qr/unsupported value/, "get_options restricted options");
 
     # test --help with:
     {

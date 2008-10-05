@@ -177,6 +177,9 @@ sub check_system_exit (@) {
 #       usage   => usage statement
 #       required_options => arrayref of options to require -- an exception
 #               will be thrown if these options are not defined
+#       restricted_options => hashref of options and arrayrefs of allowed
+#               values for them -- an exception will be thrown if an
+#               option is set and does not have one of the allowed values
 #       command_line_hash => store options specified on the command line here
 sub get_options {
   my %arg = @_;
@@ -263,6 +266,19 @@ sub get_options {
     for my $option (@{$arg{required_options}}) {
       if (not defined $arg{opthash}->{$option}) {
         croak "Required option '$option' not given on command line or specified in config file!\n";
+      }
+    }
+  }
+
+  # We can require other options to have certain values if set
+  if (ref $arg{restricted_options} eq 'HASH') {
+    for my $option (keys %{$arg{restricted_options}}) {
+      if (defined $arg{opthash}->{$option}) {
+        my $value = $arg{opthash}->{$option};
+        my @allowed = @{$arg{restricted_options}->{$option}};
+        if (not grep {$_ eq $value} @allowed) {
+          croak "Option '$option' has an unsupported value '$value'.  Supported values: @allowed\n";
+        }
       }
     }
   }
