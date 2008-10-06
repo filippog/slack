@@ -148,17 +148,18 @@ if (@ARGV) {
   # Use backends that return roles
   for my $task (@{$tasks}) {
     next unless (hashprop($task, 'returns', 'roles'));
-    my $output = run_backend($task);
-    push @roles, split(/\s+/, $output);
+    my $results = run_backend($task);
+    push @roles, split(/\s+/, $results->{output});
   }
 }
 Slack::assert_valid_role_names(@roles);
 
 $opt{verbose} and print STDERR "$PROG: installing roles: @roles\n";
 
-run_tasks(@$tasks);
+exit run_tasks(@$tasks);
 
-exit 0;
+########################################
+# Subroutines
 
 # Perl makes this so annoying I put it in a subroutine
 sub hashprop($$;$) {
@@ -173,16 +174,19 @@ sub hashprop($$;$) {
 
 sub run_tasks (@) {
   my (@tasks) = @_;
-  while (my $task = shift @tasks) {
+
+  my ($exit) = 0;
+
+  TASK: while (my $task = shift @tasks) {
     if (hashprop($task, 'returns')) {
       next;
     }
 
-    if (hashprop($task, 'per-role', 'yes')) {
+    if (hashprop($task, 'per_role', 'yes')) {
       # We run consecutive per-role tasks and in a separate, per-role
       # loop.
       my @per_role_tasks = ($task);
-      while (@tasks and hashprop($tasks[0], 'per-role', 'yes')) {
+      while (@tasks and hashprop($tasks[0], 'per_role', 'yes')) {
         push @per_role_tasks, shift @tasks;
       }
 
@@ -190,7 +194,9 @@ sub run_tasks (@) {
       ROLE: for my $role (@roles) {
         for my $role_task (@per_role_tasks) {
           if (match_conditions($role_task)) {
-            run_backend($role_task, $role);
+            my $results = run_backend($role_task, $role);
+            $exit = 1 if not $results->{success};
+
             if (hashprop($role_task, 'final', 'yes')) {
               $final = 1;
               next ROLE;
@@ -198,23 +204,24 @@ sub run_tasks (@) {
           }
         }
       }
-      return if $final;
+      last TASK if $final;
     } elsif (match_conditions($task)) {
       # multiple-role-capable steps are easy -- just run them
-      run_backend($task, @roles);
+      my $results = run_backend($task, @roles);
+      $exit = 1 if not $results->{success};
 
       if (hashprop($task, 'final', 'yes')) {
-        return;
+        last TASK;
       }
     }
   }
-  return 1;
+  return $exit;
 }
 
 sub match_conditions($) {
   my ($task) = @_;
-  if (defined $task->{'require-options'}) {
-    for my $option (@{$task->{'require-options'}}) {
+  if (defined $task->{require_options}) {
+    for my $option (@{$task->{require_options}}) {
       my ($option, $value) = split(/=/, $option, 2);
 
       if ((not $opt{$option}) or
@@ -252,8 +259,8 @@ sub run_backend ($@) {
   }
 
   # Build up the args for this thing...
-  if (defined $task->{'extra-args'}) {
-    push @command, @{$task->{'extra-args'}};
+  if (defined $task->{extra_args}) {
+    push @command, @{$task->{extra_args}};
   }
 
   # propagate verbosity - 1 to all backends
@@ -271,8 +278,8 @@ sub run_backend ($@) {
     }
   }
 
-  if (defined $task->{'extra-options'}) {
-    for my $option (@{$task->{'extra-options'}}) {
+  if (defined $task->{extra_options}) {
+    for my $option (@{$task->{extra_options}}) {
       if (defined $opt{$option}) {
         # FIXME: Stupid hack to deal with boolean options
         if ($opt{$option} eq '0') {
@@ -286,7 +293,7 @@ sub run_backend ($@) {
     }
   }
 
-  if (not defined $task->{'role-args'} or $task->{'role-args'} eq 'yes') {
+  if (not defined $task->{role_args} or $task->{role_args} eq 'yes') {
     push @command, @roles;
   }
 
@@ -294,9 +301,15 @@ sub run_backend ($@) {
 
   ($opt{verbose} > 2) and print STDERR "$PROG: Calling '@command'\n";
 
-  my ($success, $output);
+  # Hash containing:
+  #     success => 1 if we succeeded, undef otherwise
+  #     exit    => exit code of command
+  #     output  => STDOUT from command
+  # We have both exit and success because it's possible to succeed on a bad
+  # exit if we're told to continue by a prompt.
+  my $results = {};
 
-  if (defined $task->{'returns'}) {
+  if (defined $task->{returns}) {
     # Get output of command, but use open('-|') and exec() instead of `` so we
     # don't go through the shell.
     my ($child_pid, $child_fh);
@@ -309,39 +322,35 @@ sub run_backend ($@) {
     } else {
       die "Could not fork to run '@command': $!\n";
     }
-    $output = join('', <$child_fh>);
+    $results->{output} = join('', <$child_fh>);
     if (close($child_fh)) {
-      $success = 1;
+      $results->{success} = 1;
+      $results->{exit} = 0;
     }
   } else {
     if (system(@command) == 0) {
-      $success = 1;
+      $results->{success} = 1;
+      $results->{exit} = 0;
     }
   }
 
   ### Handle different exit statuses depending on $task->{conditional}
 
-  if (not $success) {
-    if (not $task->{conditional}) {
-      Slack::check_system_exit(@command);
-    } else {
-      my $exit = Slack::get_system_exit(@command);
+  if (not $results->{success}) {
+    # This will croak if the command got a signal or crashed
+    $results->{exit} = Slack::get_system_exit(@command);
 
-      if ($exit == 1) {
-        # exit 1 means a difference found or something normal that requires
-        # a prompt before continuing.
-        if ($task->{conditional} eq 'prompt') {
-          exit 1 unless Slack::prompt("Continue? [yN] ") eq 'y';
-        }
-        # FIXME: it would be good to record this for later, so we can
-        # exit non-zero.
-      } else {
-        # any other non-successful exit is a serious error.
-        die "'@command' exited $exit";
-      }
+    if (defined $task->{prompt_exit_codes} and
+        grep { $_ == $results->{exit} } @{$task->{prompt_exit_codes}}) {
+      exit 1 unless Slack::prompt("Continue? [yN] ") eq 'y';
+      $results->{success} = 1;
+    } elsif (defined $task->{pass_exit_codes} and
+        grep { $_ == $results->{exit} } @{$task->{pass_exit_codes}}) {
+      # Do nothing.
+    } else {
+      Slack::check_system_exit(@command);
     }
   }
 
-  return $output;
+  return $results;
 }
-
