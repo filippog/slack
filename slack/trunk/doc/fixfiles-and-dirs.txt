@@ -33,7 +33,7 @@ On Fri, Apr 27, 2007 at 07:19:22PM -0700, Marc MERLIN wrote:
 
 Yep.  fixfiles is mainly for files.
 
-Of course, it's not quite that simple.  Queue long explanation...
+Of course, it's not quite that simple.  Cue long explanation...
 
 > If so, would you take an RFE to improve fixfiles to also sync directory
 > perms?
@@ -51,7 +51,7 @@ a directory because it doesn't exist on the target, it has to pick some
 permissions for the new dir, so it just copies the permissions from the
 stage.  Otherwise, though, it leaves directories alone.  Naturally,
 then, this only affects things the first time on missing directories, so
-if you want to be idempotent or change existing dirs, you've got to
+if you want to be idempotent or change existing dirs, you've got to
 throw it in one of the other scripts.
 
 
@@ -84,13 +84,13 @@ more likely than a file conflict, since e.g. every role with files
 contains /.
 
 So, in general, the parent dirs on a machine may have all sorts of
-peculiar circumstanaces that you don't particularly care about, so one
+peculiar circumstances that you don't particularly care about, so one
 of the big features of slack is that it doesn't constantly muck with
 your parent dirs.
 
 That's why I rewrote my old system into slack in the first place after
 rsync introduced its --no-implied-dirs option.  The manpage for rsync
-talk about similar things in the discussion of that option.
+talks about similar things in the discussion of that option.
 
 
 
